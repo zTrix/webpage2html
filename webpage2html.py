@@ -53,5 +53,8 @@ def generate(base):
     return soup.prettify(formatter='html')
 
 if __name__ == '__main__':
-    print generate(sys.argv[1])
+    if len(sys.argv) < 2:
+        print 'usage: %s <input html>' % sys.argv[0]
+        sys.exit(10)
+    sys.stdout.write(generate(sys.argv[1]).encode('utf8'))
 
