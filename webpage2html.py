@@ -39,7 +39,7 @@ def generate(base):
         code.string = get(base, js['src'])
         js.repace_with(code)
     for img in soup('img'):
-        if not img['src']: continue
+        if 'src' not in img: continue
         src = img['src']
         if src.lower().endswith('png'):
             fmt = 'png'
@@ -56,5 +56,6 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print 'usage: %s <input html>' % sys.argv[0]
         sys.exit(10)
+    os.chdir(os.path.dirname(sys.argv[1]))
     sys.stdout.write(generate(sys.argv[1]).encode('utf8'))
 
