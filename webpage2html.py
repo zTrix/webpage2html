@@ -1,28 +1,26 @@
 #!/usr/bin/env python2
 
-import os, sys, requests, re, base64, httplib, urlparse
+import os, sys, requests, re, base64, httplib, urlparse, urllib2
 from bs4 import BeautifulSoup
 
 re_css_url = re.compile('(url\(.*?\))')
 
 def get(index, relpath = None):
     print >> sys.stderr, index, relpath
-    if index.startswith('http'):
+    if index.startswith('http') or (relpath and relpath.startswith('http')):
         parsed_url = urlparse.urlparse(index)
-        if parsed_url.scheme == 'http':
-            conn = httplib.HTTPConnection(parsed_url.netloc)
-        elif parsed_url.scheme == 'https':
-            conn = httplib.HTTPSConnection(parsed_url.netloc)
-        else:
-            raise Exception('unsupported scheme: ' + parsed_url.scheme)
-        urlpath = parsed_url.path
+        fullpath = index
         if relpath:
             if relpath.startswith('/'):
-                urlpath = relpath
+                fullpath = '%s://%s/%s' % (parsed_url.scheme, parsed_url.netloc, relpath)
+            elif relpath.startswith('http'):
+                fullpath = relpath
             else:
-                urlpath = os.path.join(urlpath, relpath)
-        conn.request('GET', urlpath, None, {'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)'})
-        return conn.getresponse().read()
+                fullpath = os.path.join(index, relpath)
+        request = urllib2.Request(fullpath)
+        request.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)')
+        response = urllib2.urlopen(request)
+        return response.read()
     elif os.path.exists(index):
         if relpath:
             return open(relpath).read()
@@ -54,7 +52,7 @@ def handle_css_content(index, css):
     reg = re.compile(r'url\s*\((.+?)\)')
     def repl(matchobj):
         src = matchobj.group(1).strip(' \'"')
-        return 'url (' + image_to_base64(index, src) + ')'
+        return 'url(' + image_to_base64(index, src) + ')'
     css = reg.sub(repl, css)
     return css
 
@@ -93,7 +91,12 @@ def generate(index):
             continue
         new_type = 'text/javascript' if not js.has_attr('type') or not js['type'] else js['type']
         code = soup.new_tag('script', type=new_type)
-        code.string = get(index, js['src'])
+        try:
+            js_str = get(index, js['src'])
+            code.string = js_str
+        except:
+            print >> sys.stderr, repr(js_str)
+            raise
         #print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
         js.replace_with(code)
     for img in soup('img'):
