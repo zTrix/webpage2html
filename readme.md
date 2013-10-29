@@ -9,7 +9,7 @@ The basic idea to achive this goal is to insert all css/javascript files into ht
 
 ## Usage
 
-save webpage directly from url:
+save webpage directly from url(**recommended** way):
 
     $ python webpage2html.py http://www.google.com > google.html
 
@@ -17,3 +17,9 @@ or save webpage first using browsers such as chrome, to something.html with some
 
     $ python /path/to/something.html > something_single.html
 
+But note that, the second method may not always work as expected, because there may be urls like `//ssl.gstatic.com/gb/images/v1_c69d5271.png` (from google index page), but the file is missing in `Google_files` directory saved by browsers.
+
+## Todo
+
+ 1. cookie support
+ 1. fix css relative url bug
