@@ -11,7 +11,11 @@ def get(index, relpath = None):
         parsed_url = urlparse.urlparse(index)
         fullpath = index
         if relpath:
-            if relpath.startswith('/'):
+            if relpath.startswith('#'):
+                fullpath = index
+            elif relpath.startswith('//'):
+                fullpath = parsed_url.scheme + ":" + relpath
+            elif relpath.startswith('/'):
                 fullpath = '%s://%s/%s' % (parsed_url.scheme, parsed_url.netloc, relpath)
             elif relpath.startswith('http'):
                 fullpath = relpath
