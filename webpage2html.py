@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-import os, sys, requests, re, base64, httplib, urlparse, urllib2
+import os, sys, re, base64, httplib, urlparse, urllib2
 from bs4 import BeautifulSoup
 
 re_css_url = re.compile('(url\(.*?\))')

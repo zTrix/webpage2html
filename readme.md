@@ -19,7 +19,14 @@ or save webpage first using browsers such as chrome, to something.html with some
 
 But note that, the second method may not always work as expected, because there may be urls like `//ssl.gstatic.com/gb/images/v1_c69d5271.png` (from google index page), but the file is missing in `Google_files` directory saved by browsers.
 
+## dependency
+
+BeautifulSoup4
+
+    $ pip install BeautifulSoup4
+
 ## Todo
 
  1. cookie support
  1. fix css relative url bug
+ 1. handle encoding other than utf8
