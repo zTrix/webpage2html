@@ -1,6 +1,8 @@
 
 # Webpage2html
 
+[![Build Status](https://travis-ci.org/zTrix/webpage2html.png)](https://travis-ci.org/zTrix/webpage2html)
+
 ## Webpage2html: Save web page to a single html file
 
 This is a simple script to save a web page to a single html file. Yes, not mhtml or pdf staff, no xxx_files directory, just one single editable html file.
