@@ -20,17 +20,17 @@ def absurl(index, relpath = None):
                 fullpath = relpath
             else:
                 fullpath = '%s://%s%s' % (parsed_url.scheme, parsed_url.netloc, os.path.normpath(os.path.join(os.path.dirname(parsed_url.path), relpath)))
-        print >> sys.stderr, fullpath
         return fullpath
-    return relpath
+    else:
+        return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
 def get(index, relpath = None):
-    print >> sys.stderr, index, relpath
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
         if not fullpath:
             print >> sys.stderr, 'Warning: invalid path', index, relpath
             return ''
+        print >> sys.stderr, fullpath
         request = urllib2.Request(fullpath)
         request.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)')
         try:
@@ -44,13 +44,15 @@ def get(index, relpath = None):
             if os.path.exists(relpath):
                 fullpath = relpath
             else:
-                fullpath = os.path.join(os.path.dirname(index), relpath)
+                fullpath = os.path.normpath(os.path.join(os.path.dirname(index), relpath))
+            print >> sys.stderr, fullpath
             try:
                 return open(fullpath).read()
             except IOError, err:
                 print >> sys.stderr, 'Warning: cannot find file', fullpath, err
                 return ''
         else:
+            print >> sys.stderr, index
             return open(index).read()
     else:
         print >> sys.stderr, 'Warning: cannot get web content for', index
@@ -81,7 +83,7 @@ def handle_css_content(index, css):
         src = matchobj.group(1).strip(' \'"')
         if src.lower().endswith('woff') or src.lower().endswith('ttf') or src.lower().endswith('otf') or src.lower().endswith('eot'):
             # dont handle font data uri currently
-            return src
+            return 'url(' + src + ')'
         return 'url(' + image_to_base64(index, src) + ')'
     css = reg.sub(repl, css)
     return css
@@ -91,6 +93,7 @@ def generate(index):
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html 
     '''
+    print >> sys.stderr, ''         # for unittest pretty printing, insert a newline here
     html_doc = get(index)
     # since BeautifulSoup will handle unclosed tags like <meta> and <link>, add a closing tag which we don't need
     # we should add the closing tag first by ourselves.
@@ -112,16 +115,12 @@ def generate(index):
             new_type = 'text/css' if not link.has_attr('type') or not link['type'] else link['type']
             css = soup.new_tag('style', type = new_type)
             # print >> sys.stderr, link['href']
-            css.string = handle_css_content(absurl(index, link['href']), get(index, link['href']))
-            #pos = 0
-            #while True:
-            #    print pos
-            #    m = re_css_url.search(css.string, pos)
-            #    if not m:
-            #        break
-            #    print m.group(0), m.start(0), m.end(0)
-            #    pos = m.end(0)
-            link.replace_with(css)
+            new_css_content = handle_css_content(absurl(index, link['href']), get(index, link['href']))
+            if False: # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
+                link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
+            else:
+                css.string = new_css_content
+                link.replace_with(css)
     for js in soup('script'):
         if not js.has_attr('src') or not js['src']:
             continue
@@ -159,7 +158,5 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print 'usage: %s <saved html file, there should be a xxx_files directory besides>|<webpage url>' % sys.argv[0]
         sys.exit(10)
-    if os.path.dirname(sys.argv[1]) and os.path.exists(sys.argv[1]):
-        os.chdir(os.path.dirname(sys.argv[1]))
     sys.stdout.write(generate(sys.argv[1]).encode('utf8'))
 

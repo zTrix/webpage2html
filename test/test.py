@@ -5,16 +5,24 @@ import webpage2html
 
 class Test(unittest.TestCase):
 
+    def local_test(self, index):
+        self.assertEqual(webpage2html.generate(index).encode('utf8'), open(index[:-5] + '_single.html').read(), 'Test Fail for ' + index)
+
     def test_0ops(self):
-        self.assertEqual(webpage2html.generate('http://blog.0ops.net/blog/2013/10/29/hack-dot-lu-ctf-2013-exploiting-400-wannabe/').encode('utf8'), open('0ops-wannable.html').read(), 'Test Fail for http://blog.0ops.net/blog/2013/10/29/hack-dot-lu-ctf-2013-exploiting-400-wannabe/')
+        self.local_test('./hacklu-ctf-2013-exp400-wannable-0ops.html')
 
     def test_meepo_download(self):
-        self.assertEqual(webpage2html.generate('http://new.meepotech.com/download').encode('utf8'), open('meepotech-download.html').read(), 'Test Fail for http://new.meepotech.com/download')
-        
+        self.local_test('./meepo-download.html')
+
+    def test_none(self):
+        self.assertEqual(webpage2html.generate('non-existing-file.html'), '')
 
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):
         os.chdir(os.path.dirname(sys.argv[0]))
     suite = unittest.TestLoader().loadTestsFromTestCase(Test)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-    #unittest.main()
+    rs = unittest.TextTestRunner(verbosity=2).run(suite)
+    if len(rs.errors) > 0 or len(rs.failures) > 0:
+        sys.exit(10)
+    else:
+        sys.exit(0)

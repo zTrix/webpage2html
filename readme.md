@@ -29,3 +29,4 @@ BeautifulSoup4
 
  1. cookie support
  1. handle encoding other than utf8
+ 1. handle css whitespace pre-wrap or pre
