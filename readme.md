@@ -28,5 +28,4 @@ BeautifulSoup4
 ## Todo
 
  1. cookie support
- 1. fix css relative url bug
  1. handle encoding other than utf8

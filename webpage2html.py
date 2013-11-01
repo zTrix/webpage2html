@@ -5,9 +5,8 @@ from bs4 import BeautifulSoup
 
 re_css_url = re.compile('(url\(.*?\))')
 
-def get(index, relpath = None):
-    print >> sys.stderr, index, relpath
-    if index.startswith('http') or (relpath and relpath.startswith('http')):
+def absurl(index, relpath = None):
+    if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
         parsed_url = urlparse.urlparse(index)
         fullpath = index
         if relpath:
@@ -16,22 +15,37 @@ def get(index, relpath = None):
             elif relpath.startswith('//'):
                 fullpath = parsed_url.scheme + ":" + relpath
             elif relpath.startswith('/'):
-                fullpath = '%s://%s/%s' % (parsed_url.scheme, parsed_url.netloc, relpath)
-            elif relpath.startswith('http'):
+                fullpath = '%s://%s%s' % (parsed_url.scheme, parsed_url.netloc, relpath)
+            elif relpath.lower().startswith('http'):
                 fullpath = relpath
             else:
-                fullpath = os.path.normpath(os.path.join(os.path.dirname(index), relpath))
+                fullpath = '%s://%s%s' % (parsed_url.scheme, parsed_url.netloc, os.path.normpath(os.path.join(os.path.dirname(parsed_url.path), relpath)))
+        print >> sys.stderr, fullpath
+        return fullpath
+    return None
+
+def get(index, relpath = None):
+    if index.startswith('http') or (relpath and relpath.startswith('http')):
+        fullpath = absurl(index, relpath)
+        if not fullpath:
+            print >> sys.stderr, 'Warning: invalid path', index, relpath
+            return ''
         request = urllib2.Request(fullpath)
         request.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)')
-        response = urllib2.urlopen(request)
-        return response.read()
+        try:
+            response = urllib2.urlopen(request)
+            return response.read()
+        except urllib2.HTTPError, err:
+            print >> sys.stderr, 'Warning: error while open ' + fullpath, err
+            return ''
     elif os.path.exists(index):
         if relpath:
             return open(relpath).read()
         else:
             return open(index).read()
     else:
-        raise Exception('cannot get web content for %s', index)
+        print >> sys.stderr, 'Warning: cannot get web content for', index
+        return ''
 
 def image_to_base64(index, src):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
@@ -56,6 +70,9 @@ def handle_css_content(index, css):
     reg = re.compile(r'url\s*\((.+?)\)')
     def repl(matchobj):
         src = matchobj.group(1).strip(' \'"')
+        if src.lower().endswith('woff') or src.lower().endswith('ttf') or src.lower().endswith('otf') or src.lower().endswith('eot'):
+            # dont handle font data uri currently
+            return src
         return 'url(' + image_to_base64(index, src) + ')'
     css = reg.sub(repl, css)
     return css
@@ -80,11 +97,13 @@ def generate(index):
     soup = BeautifulSoup(html_doc)
     for link in soup('link'):
         if link.has_attr('type') and link['type'] != 'text/css': continue
-        if link.has_attr('href') and link['href'] and link['href'].lower().endswith('.css'):
+        if link.has_attr('href') and link['href'] and (link.get('type') == 'text/css' or link['href'].lower().endswith('.css')):
+            # skip css hosted by google
+            if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
             new_type = 'text/css' if not link.has_attr('type') or not link['type'] else link['type']
             css = soup.new_tag('style', type = new_type)
             # print >> sys.stderr, link['href']
-            css.string = get(index, link['href'])
+            css.string = handle_css_content(absurl(index, link['href']), get(index, link['href']))
             #pos = 0
             #while True:
             #    print pos
