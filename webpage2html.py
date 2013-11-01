@@ -20,7 +20,7 @@ def get(index, relpath = None):
             elif relpath.startswith('http'):
                 fullpath = relpath
             else:
-                fullpath = os.path.join(index, relpath)
+                fullpath = os.path.normpath(os.path.join(os.path.dirname(index), relpath))
         request = urllib2.Request(fullpath)
         request.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)')
         response = urllib2.urlopen(request)
@@ -61,6 +61,10 @@ def handle_css_content(index, css):
     return css
 
 def generate(index):
+    '''
+    given a index url such as http://www.google.com, http://custom.domain/index.html
+    return generated single html 
+    '''
     html_doc = get(index)
     # since BeautifulSoup will handle unclosed tags like <meta> and <link>, add a closing tag which we don't need
     # we should add the closing tag first by ourselves.
