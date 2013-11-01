@@ -22,9 +22,10 @@ def absurl(index, relpath = None):
                 fullpath = '%s://%s%s' % (parsed_url.scheme, parsed_url.netloc, os.path.normpath(os.path.join(os.path.dirname(parsed_url.path), relpath)))
         print >> sys.stderr, fullpath
         return fullpath
-    return None
+    return relpath
 
 def get(index, relpath = None):
+    print >> sys.stderr, index, relpath
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
         if not fullpath:
@@ -40,7 +41,15 @@ def get(index, relpath = None):
             return ''
     elif os.path.exists(index):
         if relpath:
-            return open(relpath).read()
+            if os.path.exists(relpath):
+                fullpath = relpath
+            else:
+                fullpath = os.path.join(os.path.dirname(index), relpath)
+            try:
+                return open(fullpath).read()
+            except IOError, err:
+                print >> sys.stderr, 'Warning: cannot find file', fullpath, err
+                return ''
         else:
             return open(index).read()
     else:
@@ -120,7 +129,12 @@ def generate(index):
         code = soup.new_tag('script', type=new_type)
         try:
             js_str = get(index, js['src'])
-            code.string = js_str
+            if js_str.find('</script>') > -1:
+                code['src'] = 'data:text/javascript;base64,' + base64.b64encode(js_str)
+            elif js_str.find(']]>') < 0:
+                code.string = '<!--//--><![CDATA[//><!--\n' + js_str + '\n//--><!]]>'
+            else:
+                code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
         except:
             print >> sys.stderr, repr(js_str)
             raise
@@ -143,7 +157,7 @@ def generate(index):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print 'usage: %s <saved html>|<index url>' % sys.argv[0]
+        print 'usage: %s <saved html file, there should be a xxx_files directory besides>|<webpage url>' % sys.argv[0]
         sys.exit(10)
     if os.path.dirname(sys.argv[1]) and os.path.exists(sys.argv[1]):
         os.chdir(os.path.dirname(sys.argv[1]))
