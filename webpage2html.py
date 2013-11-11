@@ -37,8 +37,12 @@ def get(index, relpath = None):
             response = urllib2.urlopen(request)
             return response.read()
         except urllib2.HTTPError, err:
-            print >> sys.stderr, 'Warning: error while open ' + fullpath, err
+            print >> sys.stderr, 'Warning: HTTPError while open ' + fullpath, err
             return ''
+        except urllib2.URLError, err:
+            print >> sys.stderr, 'Warning: URLError while open ' + fullpath, err
+            return ''
+            
     elif os.path.exists(index):
         if relpath:
             if os.path.exists(relpath):
@@ -70,7 +74,11 @@ def image_to_base64(index, src):
         fmt = 'jpg'
     else:
         fmt = 'png'
-    return ('data:image/%s;base64,' % fmt) + base64.b64encode(get(index, src))
+    data = get(index, src)
+    if data:
+        return ('data:image/%s;base64,' % fmt) + base64.b64encode(data)
+    else:
+        return src
 
 def handle_css_content(index, css):
     if not css:
