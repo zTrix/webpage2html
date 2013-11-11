@@ -93,7 +93,6 @@ def generate(index):
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html 
     '''
-    print >> sys.stderr, ''         # for unittest pretty printing, insert a newline here
     html_doc = get(index)
     # since BeautifulSoup will handle unclosed tags like <meta> and <link>, add a closing tag which we don't need
     # we should add the closing tag first by ourselves.

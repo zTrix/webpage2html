@@ -6,6 +6,7 @@ import webpage2html
 class Test(unittest.TestCase):
 
     def local_test(self, index):
+        print ''
         self.assertEqual(webpage2html.generate(index).encode('utf8'), open(index[:-5] + '_single.html').read(), 'Test Fail for ' + index)
 
     def test_0ops(self):
@@ -15,6 +16,7 @@ class Test(unittest.TestCase):
         self.local_test('./meepo-download.html')
 
     def test_none(self):
+        print ''
         self.assertEqual(webpage2html.generate('non-existing-file.html'), '')
 
 if __name__ == '__main__':
