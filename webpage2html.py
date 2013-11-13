@@ -2,6 +2,7 @@
 
 import os, sys, re, base64, httplib, urlparse, urllib2
 from bs4 import BeautifulSoup
+import lxml
 
 re_css_url = re.compile('(url\(.*?\))')
 
@@ -102,18 +103,9 @@ def generate(index):
     return generated single html 
     '''
     html_doc = get(index)
-    # since BeautifulSoup will handle unclosed tags like <meta> and <link>, add a closing tag which we don't need
-    # we should add the closing tag first by ourselves.
-    def repl(matchobj):
-        es = matchobj.group(1)
-        if len(es) > 2 and es[-2] != '/':
-            return es[:-1] + ' />'
-        return es
-    html_doc = re.sub(r'(<\s*meta.+?>)', repl, html_doc)
-    html_doc = re.sub(r'(<\s*link.+?>)', repl, html_doc)
 
     # now build the dom tree
-    soup = BeautifulSoup(html_doc)
+    soup = BeautifulSoup(html_doc, 'lxml')
     for link in soup('link'):
         if link.has_attr('type') and link['type'] != 'text/css': continue
         if link.has_attr('href') and link['href'] and (link.get('type') == 'text/css' or link['href'].lower().endswith('.css')):

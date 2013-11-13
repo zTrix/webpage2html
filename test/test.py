@@ -15,6 +15,9 @@ class Test(unittest.TestCase):
     def test_meepo_download(self):
         self.local_test('./meepo-download.html')
 
+    def test_packet_storm(self):
+        self.local_test('./packet-storm-openssh-backdoor-patch.html')
+
     def test_none(self):
         print ''
         self.assertEqual(webpage2html.generate('non-existing-file.html'), '')
