@@ -7,8 +7,8 @@ class Test(unittest.TestCase):
 
     def local_test(self, index):
         print ''
-        gen = webpage2html.generate(index).encode('utf8')
-        ans = open(index[:-5] + '_single.html', 'rb').read()
+        gen = webpage2html.generate(index).encode('utf8').strip()
+        ans = open(index[:-5] + '_single.html', 'rb').read().strip()
         gl = len(gen)
         al = len(ans)
         begin = 0
