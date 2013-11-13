@@ -7,7 +7,9 @@ class Test(unittest.TestCase):
 
     def local_test(self, index):
         print ''
-        self.assertEqual(webpage2html.generate(index).encode('utf8'), open(index[:-5] + '_single.html').read(), 'Test Fail for ' + index)
+        gen = webpage2html.generate(index).encode('utf8')
+        ans = open(index[:-5] + '_single.html').read()
+        self.assertEqual(gen, ans, 'Test Fail for %s, ans = %s\ngen = %s\n' % (index, ans, gen))
 
     def test_0ops(self):
         self.local_test('./hacklu-ctf-2013-exp400-wannable-0ops.html')
