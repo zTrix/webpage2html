@@ -17,7 +17,7 @@ class Test(unittest.TestCase):
         end = -1
         while end + gl > 0 and end + al > 0 and ans[end] == gen[end] :
             end -= 1
-        self.assertEqual(gen, ans, 'Test Fail for %s, begin = %d, end = %d, ans = %s\ngen = %s\n' % (index, begin, end, ans[begin: end], gen[begin: end]))
+        self.assertEqual(gen, ans, 'Test Fail for %s, begin = %d, end = %d, ans len = %d, gen len = %d, ans = %s\ngen = %s\n' % (index, begin, end, al, gl, repr(ans[begin: end]), repr(gen[begin: end])))
 
     def test_0ops(self):
         self.local_test('./hacklu-ctf-2013-exp400-wannable-0ops.html')
