@@ -9,7 +9,15 @@ class Test(unittest.TestCase):
         print ''
         gen = webpage2html.generate(index).encode('utf8')
         ans = open(index[:-5] + '_single.html', 'rb').read()
-        self.assertEqual(gen, ans, 'Test Fail for %s, ans = %s\ngen = %s\n' % (index, ans, gen))
+        gl = len(gen)
+        al = len(ans)
+        begin = 0
+        while begin < gl and begin < al and ans[begin] == gen[begin]:
+            begin += 1
+        end = -1
+        while end + gl > 0 and end + al > 0 and ans[end] == gen[end] :
+            end -= 1
+        self.assertEqual(gen, ans, 'Test Fail for %s, begin = %d, end = %d, ans = %s\ngen = %s\n' % (index, begin, end, ans[begin: end], gen[begin: end]))
 
     def test_0ops(self):
         self.local_test('./hacklu-ctf-2013-exp400-wannable-0ops.html')
