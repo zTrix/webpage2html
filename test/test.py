@@ -8,7 +8,7 @@ class Test(unittest.TestCase):
     def local_test(self, index):
         print ''
         gen = webpage2html.generate(index).encode('utf8')
-        ans = open(index[:-5] + '_single.html').read()
+        ans = open(index[:-5] + '_single.html', 'rb').read()
         self.assertEqual(gen, ans, 'Test Fail for %s, ans = %s\ngen = %s\n' % (index, ans, gen))
 
     def test_0ops(self):
