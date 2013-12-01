@@ -132,7 +132,10 @@ def generate(index):
             elif js_str.find(']]>') < 0:
                 code.string = '<!--//--><![CDATA[//><!--\n' + js_str + '\n//--><!]]>'
             else:
-                code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
+                # replace ]]> does not work at all for chrome, do not believe 
+                # http://en.wikipedia.org/wiki/CDATA
+                # code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
+                code.string = js_str
         except:
             print >> sys.stderr, repr(js_str)
             raise
