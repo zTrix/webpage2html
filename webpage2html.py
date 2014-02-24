@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-import os, sys, re, base64, httplib, urlparse, urllib2
+import os, sys, re, base64, httplib, urlparse, urllib2, urllib
 from bs4 import BeautifulSoup
 import lxml
 
@@ -21,22 +21,10 @@ def log(s, color = None, on_color = None, attrs = None, new_line = True):
         sys.stderr.write('\n')
     sys.stderr.flush()
 
-def absurl(index, relpath = None):
+def absurl(index, relpath = ''):
     if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
-        parsed_url = urlparse.urlparse(index)
-        fullpath = index
-        if relpath:
-            if relpath.startswith('#'):
-                fullpath = index
-            elif relpath.startswith('//'):
-                fullpath = parsed_url.scheme + ":" + relpath
-            elif relpath.startswith('/'):
-                fullpath = '%s://%s%s' % (parsed_url.scheme, parsed_url.netloc, relpath)
-            elif relpath.lower().startswith('http'):
-                fullpath = relpath
-            else:
-                fullpath = '%s://%s%s' % (parsed_url.scheme, parsed_url.netloc, os.path.normpath(os.path.join(os.path.dirname(parsed_url.path), relpath)))
-        return fullpath
+        new = urlparse.urlparse(urlparse.urljoin(index, relpath))
+        return urlparse.urlunsplit((new.scheme, (new.port == None) and new.hostname or new.netloc, new.path, new.query, ''))
     else:
         return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
@@ -46,6 +34,9 @@ def get(index, relpath = None, verbose = True):
         if not fullpath:
             log('[ WARN ] invalid path, %s %s' % (index, relpath), 'yellow')
             return ''
+        # urllib2 only accepts valid url, the following code is taken from urllib
+        # http://svn.python.org/view/python/trunk/Lib/urllib.py?r1=71780&r2=71779&pathrev=71780
+        fullpath = urllib.quote(fullpath, safe="%/:=&?~#+!$,;'@()*[]")
         request = urllib2.Request(fullpath)
         request.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)')
         try:
