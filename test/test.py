@@ -7,7 +7,7 @@ class Test(unittest.TestCase):
 
     def local_test(self, index):
         print ''
-        gen = webpage2html.generate(index).encode('utf8').strip()
+        gen = webpage2html.generate(index, comment = False).encode('utf8').strip()
         ans = open(index[:-5] + '_single.html', 'rb').read().strip()
         gl = len(gen)
         al = len(ans)
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
 
     def test_none(self):
         print ''
-        self.assertEqual(webpage2html.generate('non-existing-file.html'), '')
+        self.assertEqual(webpage2html.generate('non-existing-file.html', comment = False), '')
 
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-import os, sys, re, base64, httplib, urlparse, urllib2, urllib
+import os, sys, re, base64, httplib, urlparse, urllib2, urllib, datetime
 from bs4 import BeautifulSoup
 import lxml
 
@@ -112,7 +112,7 @@ def handle_css_content(index, css):
     css = reg.sub(repl, css)
     return css
 
-def generate(index, verbose = True):
+def generate(index, verbose = True, comment = True):
     '''
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html 
@@ -176,14 +176,11 @@ def generate(index, verbose = True):
             if tag.string:
                 tag.string = handle_css_content(index, tag.string)
 
-    # TODO, add prefix here
-    """
-    <!--
-     single html processed by https://github.com/zTrix/webpage2html
-     url: http://xxx
-     saved date: Mon Feb 24 2014 02:06:40 GMT+0800 (CST) 
-    -->
-    """
+    # finally insert some info into comments
+    if comment:
+        for html in soup('html'):
+            html.insert(0, BeautifulSoup('<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (index, datetime.datetime.now().ctime())))
+            break
     return soup.prettify(formatter='html')
 
 if __name__ == '__main__':
