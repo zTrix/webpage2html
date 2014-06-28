@@ -28,7 +28,7 @@ def absurl(index, relpath = ''):
     else:
         return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
-def get(index, relpath = None, verbose = True):
+def get(index, relpath = None, verbose = True, usecache = True):
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
         if not fullpath:
@@ -37,13 +37,21 @@ def get(index, relpath = None, verbose = True):
         # urllib2 only accepts valid url, the following code is taken from urllib
         # http://svn.python.org/view/python/trunk/Lib/urllib.py?r1=71780&r2=71779&pathrev=71780
         fullpath = urllib.quote(fullpath, safe="%/:=&?~#+!$,;'@()*[]")
+        if usecache:
+            if not hasattr(urllib2, 'webpage2html_cache'): urllib2.webpage2html_cache = {}
+            if fullpath in urllib2.webpage2html_cache:
+                log('[ CACHE HIT ] - %s' % fullpath)
+                return urllib2.webpage2html_cache[fullpath]
         request = urllib2.Request(fullpath)
         request.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)')
         try:
             response = urllib2.urlopen(request)
             if verbose:
                 log('[ GET ] 200 - %s' % fullpath)
-            return response.read()
+            content = response.read()
+            if usecache:
+                urllib2.webpage2html_cache[fullpath] = content
+            return content
         except urllib2.HTTPError, err:
             if verbose:
                 log('[ WARN ] %d - %s %s' % (err.code, fullpath, err.reason), 'yellow')
