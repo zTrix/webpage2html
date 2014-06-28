@@ -125,8 +125,9 @@ def generate(index, verbose = True, comment = True):
         if link.get('href') and (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
             # skip css hosted by google
             if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
-            new_type = 'text/css' if not link.has_attr('type') or not link['type'] else link['type']
+            new_type = 'text/css' if not link.get('type') else link['type']
             css = soup.new_tag('style', type = new_type)
+            css['data-href'] = link['href']
             new_css_content = handle_css_content(absurl(index, link['href']), get(index, relpath = link['href'], verbose = verbose))
             if False: # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
                 link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
@@ -134,10 +135,10 @@ def generate(index, verbose = True, comment = True):
                 css.string = new_css_content
                 link.replace_with(css)
     for js in soup('script'):
-        if not js.has_attr('src') or not js['src']:
-            continue
+        if not js.get('src'): continue
         new_type = 'text/javascript' if not js.has_attr('type') or not js['type'] else js['type']
         code = soup.new_tag('script', type=new_type)
+        code['data-src'] = js['src']
         try:
             js_str = get(index, relpath = js['src'], verbose = verbose)
             if js_str.find('</script>') > -1:
@@ -155,7 +156,8 @@ def generate(index, verbose = True, comment = True):
         #print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
         js.replace_with(code)
     for img in soup('img'):
-        if not img.has_attr('src') or not img['src']: continue
+        if not img.get('src'): continue
+        img['data-src'] = img['src']
         img['src'] = image_to_base64(index, img['src'])
         def check_alt(attr):
             if img.has_attr(attr) and img[attr].startswith('this.src='):
