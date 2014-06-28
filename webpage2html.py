@@ -122,8 +122,7 @@ def generate(index, verbose = True, comment = True):
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
     for link in soup('link'):
-        if link.has_attr('type') and link['type'] != 'text/css': continue
-        if link.has_attr('href') and link['href'] and (link.get('type') == 'text/css' or link['href'].lower().endswith('.css')):
+        if link.get('href') and (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
             # skip css hosted by google
             if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
             new_type = 'text/css' if not link.has_attr('type') or not link['type'] else link['type']
