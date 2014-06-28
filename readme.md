@@ -3,10 +3,6 @@
 
 [![Build Status](https://travis-ci.org/zTrix/webpage2html.png)](https://travis-ci.org/zTrix/webpage2html)
 
-[![endorse](http://api.coderwall.com/ztrix/endorsecount.png)](http://coderwall.com/ztrix)
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/zTrix/webpage2html/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
 ## Webpage2html: Save web page to a single html file
 
 This is a simple script to save a web page to a single html file. Yes, not mhtml or pdf staff, no xxx_files directory, just one single editable html file.
@@ -27,11 +23,13 @@ But note that, the second method may not always work as expected, because there 
 
 ## dependency
 
-BeautifulSoup4, lxml
+BeautifulSoup4, lxml, termcolor(optional)
 
-    $ pip install lxml, BeautifulSoup4
+    $ pip install lxml, BeautifulSoup4, termcolor
 
 I have tried the default `HTMLParser` and `html5lib` as the backend parser for BeautifulSoup, but both of them are buggy, `HTMLParser` handles self closing tags (like `<br>` `<meta>`) incorrectly(it will wait for closing tag for `<br>`, so If too many `<br>` tags exist in the html, BeautifulSoup will complain `RuntimeError: maximum recursion depth exceeded`), and `html5lib` will encode encoded html entities such as `&lt;` again to `&amp;lt;`, which is definitly unacceptable. I have tested many cases, and `lxml` works perfectly, so I choose to use `lxml` now.
+
+The `termcolor` package is for colored log output support if you like.
 
 ## Todo
 
@@ -39,3 +37,8 @@ I have tried the default `HTMLParser` and `html5lib` as the backend parser for B
  1. handle encoding other than utf8
  1. handle css whitespace pre-wrap or pre
  1. http://www.python.org still does not work.
+
+# Thanks
+
+ 1. Thanks lukin.a.i who submitted patch to fix not recognised css link (rel=stylesheet) issue
+
