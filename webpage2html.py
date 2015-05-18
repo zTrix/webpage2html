@@ -157,7 +157,7 @@ def generate(index, verbose = True, comment = True):
                 # replace ]]> does not work at all for chrome, do not believe 
                 # http://en.wikipedia.org/wiki/CDATA
                 # code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
-                code.string = js_str
+                code.string = js_str.encode('utf-8')
         except:
             log(repr(js_str))
             raise

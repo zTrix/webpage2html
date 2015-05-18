@@ -5,9 +5,9 @@
 
 ## Webpage2html: Save web page to a single html file
 
-This is a simple script to save a web page to a single html file. Yes, not mhtml or pdf staff, no xxx_files directory, just one single editable html file.
+This is a simple script to save a web page to a single html file. No mhtml or pdf stuff, no xxx_files directory, just one single readable and editable html file.
 
-The basic idea to achive this goal is to insert all css/javascript files into html directly, and use base64 data URI for image data.
+The basic idea is to insert all css/javascript files into html directly, and use base64 data URI for image data.
 
 ## Usage
 
