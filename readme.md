@@ -53,3 +53,6 @@ The `termcolor` package is for colored log output support if you like.
 
  1. Thanks lukin.a.i who submitted patch to fix not recognised css link (rel=stylesheet) issue
 
+# Reference
+
+ 1. Java port of this project. https://github.com/cedricblondeau/webpage2html-java
