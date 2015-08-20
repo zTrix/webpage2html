@@ -5,32 +5,19 @@ import webpage2html
 
 class Test(unittest.TestCase):
 
-    def local_test(self, index):
-        print ''
-        gen = webpage2html.generate(index, comment = False).encode('utf8').strip()
-        ans = open(index[:-5] + '_single.html', 'rb').read().strip()
-        gl = len(gen)
-        al = len(ans)
-        begin = 0
-        while begin < gl and begin < al and ans[begin] == gen[begin]:
-            begin += 1
-        end = -1
-        while end + gl > 0 and end + al > 0 and ans[end] == gen[end] :
-            end -= 1
-        self.assertEqual(gen, ans, 'Test Fail for %s, begin = %d, end = %d, ans len = %d, gen len = %d, ans = %s\ngen = %s\n' % (index, begin, end, al, gl, repr(ans[begin: end]), repr(gen[begin: end])))
-
     def test_0ops(self):
-        self.local_test('./hacklu-ctf-2013-exp400-wannable-0ops.html')
+        print ''
+        gen = webpage2html.generate('./hacklu-ctf-2013-exp400-wannable-0ops.html', comment=False)
+        assert '<style data-href="./hacklu-ctf-2013-exp400-wannable-0ops_files/screen.css" type="text/css">html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt' in gen
 
-    def test_meepo_download(self):
-        self.local_test('./meepo-download.html')
-
-    def test_packet_storm(self):
-        self.local_test('./packet-storm-openssh-backdoor-patch.html')
+    def test_pre_formatting(self):
+        print ''
+        gen = webpage2html.generate('./test_pre_formatting.html', comment=False)
+        assert '<pre><code>$ git clone https://github.com/chaitin/sqlchop</code></pre>' in gen
 
     def test_none(self):
         print ''
-        self.assertEqual(webpage2html.generate('non-existing-file.html', comment = False), '')
+        self.assertEqual(webpage2html.generate('non-existing-file.html', comment=False, verbose=False), '')
 
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):

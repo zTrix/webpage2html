@@ -48,7 +48,6 @@ The `termcolor` package is for colored log output support if you like.
  1. cookie support
  1. handle encoding other than utf8
  1. handle css whitespace pre-wrap or pre
- 1. http://www.python.org still does not work.
 
 # Thanks
 
