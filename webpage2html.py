@@ -21,14 +21,14 @@ def log(s, color = None, on_color = None, attrs = None, new_line = True):
         sys.stderr.write('\n')
     sys.stderr.flush()
 
-def absurl(index, relpath = ''):
+def absurl(index, relpath=''):
     if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
         new = urlparse.urlparse(urlparse.urljoin(index, relpath))
         return urlparse.urlunsplit((new.scheme, (new.port == None) and new.hostname or new.netloc, new.path, new.query, ''))
     else:
         return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
-def get(index, relpath = None, verbose = True, usecache = True):
+def get(index, relpath=None, verbose=True, usecache=True):
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
         if not fullpath:
@@ -120,7 +120,7 @@ def handle_css_content(index, css):
     css = reg.sub(repl, css)
     return css
 
-def generate(index, verbose = True, comment = True):
+def generate(index, verbose=True, comment=True):
     '''
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html 
@@ -188,13 +188,14 @@ def generate(index, verbose = True, comment = True):
     # finally insert some info into comments
     if comment:
         for html in soup('html'):
-            html.insert(0, BeautifulSoup('<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (index, datetime.datetime.now().ctime())))
+            html.insert(0, BeautifulSoup('<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (index, datetime.datetime.now().ctime()), 'lxml'))
             break
-    return soup.prettify(formatter='html')
+    return str(soup)
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print 'usage: %s <saved html file, there should be a xxx_files directory besides>|<webpage url>' % sys.argv[0]
         sys.exit(10)
-    sys.stdout.write(generate(sys.argv[1]).encode('utf8'))
+    rs = generate(sys.argv[1])
+    sys.stdout.write(rs)
 
