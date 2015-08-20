@@ -88,14 +88,17 @@ def get(index, relpath=None, verbose=True, usecache=True):
 
 def image_to_base64(index, src):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
+    sp = urlparse.urlparse(src).path
     if src.strip().startswith('data:'):
         return src
-    if src.lower().endswith('png'):
+    if sp.lower().endswith('png'):
         fmt = 'png'
-    elif src.lower().endswith('gif'):
+    elif sp.lower().endswith('gif'):
         fmt = 'gif'
-    elif src.lower().endswith('jpg') or src.lower().endswith('jpeg'):
+    elif sp.lower().endswith('jpg') or src.lower().endswith('jpeg'):
         fmt = 'jpg'
+    elif sp.lower().endswith('svg'):
+        fmt = 'svg+xml'
     else:
         fmt = 'png'
     data = get(index, src)
