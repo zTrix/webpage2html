@@ -120,7 +120,7 @@ def handle_css_content(index, css):
     css = reg.sub(repl, css)
     return css
 
-def generate(index, verbose=True, comment=True):
+def generate(index, verbose=True, comment=True, keep_script=False, prettify=False):
     '''
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html 
@@ -143,6 +143,9 @@ def generate(index, verbose=True, comment=True):
                 css.string = new_css_content
                 link.replace_with(css)
     for js in soup('script'):
+        if not keep_script:
+            js.replace_with('')
+            continue
         if not js.get('src'): continue
         new_type = 'text/javascript' if not js.has_attr('type') or not js['type'] else js['type']
         code = soup.new_tag('script', type=new_type)
@@ -190,7 +193,10 @@ def generate(index, verbose=True, comment=True):
         for html in soup('html'):
             html.insert(0, BeautifulSoup('<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (index, datetime.datetime.now().ctime()), 'lxml'))
             break
-    return str(soup)
+    if prettify:
+        return soup.prettify(formatter='html')
+    else:
+        return str(soup)
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:

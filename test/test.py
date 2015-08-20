@@ -5,19 +5,24 @@ import webpage2html
 
 class Test(unittest.TestCase):
 
-    def test_0ops(self):
+    def test_none(self):
         print ''
-        gen = webpage2html.generate('./hacklu-ctf-2013-exp400-wannable-0ops.html', comment=False)
-        assert '<style data-href="./hacklu-ctf-2013-exp400-wannable-0ops_files/screen.css" type="text/css">html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt' in gen
+        self.assertEqual(webpage2html.generate('non-existing-file.html', comment=False, verbose=False), '')
 
     def test_pre_formatting(self):
         print ''
         gen = webpage2html.generate('./test_pre_formatting.html', comment=False)
         assert '<pre><code>$ git clone https://github.com/chaitin/sqlchop</code></pre>' in gen
 
-    def test_none(self):
+    def test_0ops(self):
         print ''
-        self.assertEqual(webpage2html.generate('non-existing-file.html', comment=False, verbose=False), '')
+        gen = webpage2html.generate('./hacklu-ctf-2013-exp400-wannable-0ops.html', comment=False)
+        assert '<style data-href="./hacklu-ctf-2013-exp400-wannable-0ops_files/screen.css" type="text/css">html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt' in gen
+
+    def test_no_script(self):
+        print ''
+        gen = webpage2html.generate('./test_no_script.html', comment=False, keep_script=False)
+        assert '<script' not in gen, gen
 
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):
