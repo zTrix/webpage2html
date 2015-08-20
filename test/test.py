@@ -24,6 +24,12 @@ class Test(unittest.TestCase):
         gen = webpage2html.generate('./test_no_script.html', comment=False, keep_script=False)
         assert '<script' not in gen, gen
 
+    def test_full_url(self):
+        print ''
+        gen = webpage2html.generate('./another_dir/test_full_url.html', comment=False, full_url=True)
+        assert 'href="another_dir/questions/110240"' in gen, gen
+        assert 'href="another_dir/static/img/favicon.ico"' in gen, gen
+
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):
         os.chdir(os.path.dirname(sys.argv[0]))

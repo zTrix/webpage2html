@@ -120,7 +120,7 @@ def handle_css_content(index, css):
     css = reg.sub(repl, css)
     return css
 
-def generate(index, verbose=True, comment=True, keep_script=False, prettify=False):
+def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True):
     '''
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html 
@@ -130,18 +130,22 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
     for link in soup('link'):
-        if link.get('href') and (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
-            # skip css hosted by google
-            if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
-            new_type = 'text/css' if not link.get('type') else link['type']
-            css = soup.new_tag('style', type = new_type)
-            css['data-href'] = link['href']
-            new_css_content = handle_css_content(absurl(index, link['href']), get(index, relpath = link['href'], verbose = verbose))
-            if False: # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
-                link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
-            else:
-                css.string = new_css_content
-                link.replace_with(css)
+        if link.get('href'):
+            if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
+                # skip css hosted by google
+                if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
+                new_type = 'text/css' if not link.get('type') else link['type']
+                css = soup.new_tag('style', type = new_type)
+                css['data-href'] = link['href']
+                new_css_content = handle_css_content(absurl(index, link['href']), get(index, relpath = link['href'], verbose = verbose))
+                if False: # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
+                    link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
+                else:
+                    css.string = new_css_content
+                    link.replace_with(css)
+            elif full_url:
+                link['data-href'] = link['href']
+                link['href'] = absurl(index, link['href'])
     for js in soup('script'):
         if not keep_script:
             js.replace_with('')
@@ -178,6 +182,9 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         check_alt('onmouseover')
         check_alt('onmouseout')
     for tag in soup(True):
+        if full_url and tag.name == 'a' and tag.has_attr('href'):
+            tag['data-href'] = tag['href']
+            tag['href'] = absurl(index, tag['href'])
         if tag.has_attr('style'):
             if tag['style']:
                 tag['style'] = handle_css_content(index, tag['style'])
