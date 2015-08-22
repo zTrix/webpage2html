@@ -43,12 +43,6 @@ I have tried the default `HTMLParser` and `html5lib` as the backend parser for B
 
 The `termcolor` package is for colored log output support if you like.
 
-## Todo
-
- 1. cookie support
- 1. handle encoding other than utf8
- 1. handle css whitespace pre-wrap or pre
-
 # Thanks
 
  1. Thanks lukin.a.i who submitted patch to fix not recognised css link (rel=stylesheet) issue
