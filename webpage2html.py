@@ -208,10 +208,13 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     else:
         return str(soup)
 
-if __name__ == '__main__':
+def main():
     if len(sys.argv) < 2:
         print 'usage: %s <saved html file, there should be a xxx_files directory besides>|<webpage url>' % sys.argv[0]
         sys.exit(10)
     rs = generate(sys.argv[1])
     sys.stdout.write(rs)
+
+if __name__ == '__main__':
+    main()
 
