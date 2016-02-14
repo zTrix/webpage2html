@@ -36,22 +36,21 @@ def get(index, relpath=None, verbose=True, usecache=True):
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
         if not fullpath:
-            log('[ WARN ] invalid path, %s %s' % (index, relpath), 'yellow')
+            if verbose: log('[ WARN ] invalid path, %s %s' % (index, relpath), 'yellow')
             return ''
         # urllib2 only accepts valid url, the following code is taken from urllib
         # http://svn.python.org/view/python/trunk/Lib/urllib.py?r1=71780&r2=71779&pathrev=71780
         fullpath = urllib.quote(fullpath, safe="%/:=&?~#+!$,;'@()*[]")
         if usecache:
             if fullpath in webpage2html_cache:
-                log('[ CACHE HIT ] - %s' % fullpath)
+                if verbose: log('[ CACHE HIT ] - %s' % fullpath)
                 return webpage2html_cache[fullpath]
         headers = {
             'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)'
         }
         try:
             response = requests.get(fullpath, headers=headers)
-            if verbose:
-                log('[ GET ] %d - %s' % (response.status_code, response.url))
+            if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
             if response.headers.get('content-type', '').lower().startswith('text/'):
                 content = response.text
             else:
@@ -60,8 +59,7 @@ def get(index, relpath=None, verbose=True, usecache=True):
                 webpage2html_cache[fullpath] = content
             return content
         except Exception as ex:
-            if verbose:
-                log('[ WARN ] %s - %s %s' % ('???', fullpath, ex), 'yellow')
+            if verbose: log('[ WARN ] %s - %s %s' % ('???', fullpath, ex), 'yellow')
             return ''
             
     elif os.path.exists(index):
@@ -89,7 +87,7 @@ def get(index, relpath=None, verbose=True, usecache=True):
         if verbose: log('[ ERROR ] invalid index - %s' % index, 'red')
         return ''
 
-def image_to_base64(index, src):
+def image_to_base64(index, src, verbose=True):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
     sp = urlparse.urlparse(src).path
     if src.strip().startswith('data:'):
@@ -104,13 +102,13 @@ def image_to_base64(index, src):
         fmt = 'svg+xml'
     else:
         fmt = 'png'
-    data = get(index, src)
+    data = get(index, src, verbose=verbose)
     if data:
         return ('data:image/%s;base64,' % fmt) + base64.b64encode(data)
     else:
         return src
 
-def handle_css_content(index, css):
+def handle_css_content(index, css, verbose=True):
     if not css:
         return css
     # Watch out! how to handle urls which contain parentheses inside? Oh god, css does not support such kind of urls
@@ -122,7 +120,7 @@ def handle_css_content(index, css):
         if src.lower().endswith('woff') or src.lower().endswith('ttf') or src.lower().endswith('otf') or src.lower().endswith('eot'):
             # dont handle font data uri currently
             return 'url(' + src + ')'
-        return 'url(' + image_to_base64(index, src) + ')'
+        return 'url(' + image_to_base64(index, src, verbose=verbose) + ')'
     css = reg.sub(repl, css)
     return css
 
@@ -143,7 +141,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type = new_type)
                 css['data-href'] = link['href']
-                new_css_content = handle_css_content(absurl(index, link['href']), get(index, relpath = link['href'], verbose = verbose))
+                new_css_content = handle_css_content(absurl(index, link['href']), get(index, relpath = link['href'], verbose=verbose), verbose=verbose)
                 if False: # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
                     link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
                 else:
@@ -172,14 +170,14 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
                 # code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
                 code.string = js_str.encode('utf-8')
         except:
-            log(repr(js_str))
+            if verbose: log(repr(js_str))
             raise
         #print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
         js.replace_with(code)
     for img in soup('img'):
         if not img.get('src'): continue
         img['data-src'] = img['src']
-        img['src'] = image_to_base64(index, img['src'])
+        img['src'] = image_to_base64(index, img['src'], verbose=verbose)
         def check_alt(attr):
             if img.has_attr(attr) and img[attr].startswith('this.src='):
                 # we do not handle this situation yet, just warn the user
@@ -193,13 +191,13 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
             tag['href'] = absurl(index, tag['href'])
         if tag.has_attr('style'):
             if tag['style']:
-                tag['style'] = handle_css_content(index, tag['style'])
+                tag['style'] = handle_css_content(index, tag['style'], verbose=verbose)
         elif tag.name == 'link' and tag.has_attr('type') and tag['type'] == 'text/css':
             if tag.string:
-                tag.string = handle_css_content(index, tag.string)
+                tag.string = handle_css_content(index, tag.string, verbose=verbose)
         elif tag.name == 'style':
             if tag.string:
-                tag.string = handle_css_content(index, tag.string)
+                tag.string = handle_css_content(index, tag.string, verbose=verbose)
 
     # finally insert some info into comments
     if comment:
@@ -211,13 +209,61 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     else:
         return str(soup)
 
-def main():
-    if len(sys.argv) < 2:
-        print 'usage: %s <saved html file, there should be a xxx_files directory besides>|<webpage url>' % sys.argv[0]
+def usage():
+    print("""
+usage:
+
+    $ webpage2html [options] some_url
+
+options:
+
+    -h, --help              help page, you are reading this now!
+    -q, --quite             don't show verbose url get log in stderr
+    -s, --script            keep javascript in the generated html 
+
+examples:
+
+    $ webpage2html -h
+        you are reading this help message
+
+    # save normal page for reading, keep style untainted
+    $ webpage2html http://www.google.com > google.html
+
+    # save dynamic page with Javascript
+    # the 2048 game can be played offline after being saved
+    $ webpage2html -s http://gabrielecirulli.github.io/2048/ > 2048.html
+
+    # it also works with local saved xxx.html with a directory named xxx_files besides
+    $ webpage2html /path/to/xxx.html > xxx_single.html
+""")
+
+def main(argv):
+    import getopt
+    try:
+        opts, args = getopt.getopt(argv, 'hqs', ['help', 'quite', 'script'])
+    except getopt.GetoptError as err:
+        print(str(err))
+        usage()
         sys.exit(10)
-    rs = generate(sys.argv[1])
+
+    kwargs = { }
+
+    for o, a in opts:
+        if o in ('-h', '--help'):
+            usage()
+            sys.exit(0)
+        elif o in ('-q', '--quite'):
+            kwargs['verbose'] = False
+        elif o in ('-s', '--script'):
+            kwargs['keep_script'] = True
+
+    if len(args) != 1:
+        usage()
+        sys.exit(10)
+
+    rs = generate(args[0], **kwargs)
     sys.stdout.write(rs)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
 
