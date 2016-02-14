@@ -226,18 +226,19 @@ examples:
     $ webpage2html -h
         you are reading this help message
 
-    # save normal page for reading, keep style untainted
     $ webpage2html http://www.google.com > google.html
+        save google index page for offline reading, keep style untainted
 
-    # save dynamic page with Javascript
-    # the 2048 game can be played offline after being saved
     $ webpage2html -s http://gabrielecirulli.github.io/2048/ > 2048.html
+        save dynamic page with Javascript example
+        the 2048 game can be played offline after being saved
 
-    # it also works with local saved xxx.html with a directory named xxx_files besides
     $ webpage2html /path/to/xxx.html > xxx_single.html
+        combine local saved xxx.html with a directory named xxx_files together into a single html file
 """)
 
-def main(argv):
+def main():
+    argv = sys.argv[1:]
     import getopt
     try:
         opts, args = getopt.getopt(argv, 'hqs', ['help', 'quite', 'script'])
@@ -265,5 +266,5 @@ def main(argv):
     sys.stdout.write(rs)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
 

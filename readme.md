@@ -9,21 +9,27 @@ This is a simple script to save a web page to a single html file. No mhtml or pd
 
 The basic idea is to insert all css/javascript files into html directly, and use base64 data URI for image data.
 
-## Usage
+## Usage and Example
 
 save webpage directly from url(**recommended** way):
 
 ```bash
-$ python webpage2html.py http://www.google.com > google.html
+$ python2 webpage2html.py http://www.google.com > google.html
 ```
 
 or save webpage first using browsers such as chrome, to something.html with something_files directory beside.
 
 ```bash
-$ python /path/to/something.html > something_single.html
+$ python2 webpage2html.py /path/to/something.html > something_single.html
 ```
 
 But note that, the second method may not always work as expected, because there may be urls like `//ssl.gstatic.com/gb/images/v1_c69d5271.png` (from google index page), but the file is missing in `Google_files` directory saved by browsers.
+
+Enable javascript, for example, save 2048 game page into a single html for offline playing
+
+```bash
+$ python2 webpage2html.py -s http://gabrielecirulli.github.io/2048/ > 2048.html
+```
 
 ## Dependency
 
