@@ -36,7 +36,7 @@ $ pip install -r requirements.txt
 or install them manually
 
 ```bash
-$ pip install lxml, BeautifulSoup4, termcolor
+$ pip install lxml BeautifulSoup4 requests termcolor
 ```
 
 I have tried the default `HTMLParser` and `html5lib` as the backend parser for BeautifulSoup, but both of them are buggy, `HTMLParser` handles self closing tags (like `<br>` `<meta>`) incorrectly(it will wait for closing tag for `<br>`, so If too many `<br>` tags exist in the html, BeautifulSoup will complain `RuntimeError: maximum recursion depth exceeded`), and `html5lib` will encode encoded html entities such as `&lt;` again to `&amp;lt;`, which is definitly unacceptable. I have tested many cases, and `lxml` works perfectly, so I choose to use `lxml` now.

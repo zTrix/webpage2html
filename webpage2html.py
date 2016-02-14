@@ -1,8 +1,9 @@
 #!/usr/bin/env python2
 
-import os, sys, re, base64, httplib, urlparse, urllib2, urllib, datetime
+import os, sys, re, base64, urlparse, urllib2, urllib, datetime
 from bs4 import BeautifulSoup
 import lxml
+import requests
 
 re_css_url = re.compile('(url\(.*?\))')
 
@@ -28,7 +29,10 @@ def absurl(index, relpath=''):
     else:
         return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
+webpage2html_cache = {}
+
 def get(index, relpath=None, verbose=True, usecache=True):
+    global webpage2html_cache
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
         if not fullpath:
@@ -38,27 +42,26 @@ def get(index, relpath=None, verbose=True, usecache=True):
         # http://svn.python.org/view/python/trunk/Lib/urllib.py?r1=71780&r2=71779&pathrev=71780
         fullpath = urllib.quote(fullpath, safe="%/:=&?~#+!$,;'@()*[]")
         if usecache:
-            if not hasattr(urllib2, 'webpage2html_cache'): urllib2.webpage2html_cache = {}
-            if fullpath in urllib2.webpage2html_cache:
+            if fullpath in webpage2html_cache:
                 log('[ CACHE HIT ] - %s' % fullpath)
-                return urllib2.webpage2html_cache[fullpath]
-        request = urllib2.Request(fullpath)
-        request.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)')
+                return webpage2html_cache[fullpath]
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)'
+        }
         try:
-            response = urllib2.urlopen(request)
+            response = requests.get(fullpath, headers=headers)
             if verbose:
-                log('[ GET ] 200 - %s' % fullpath)
-            content = response.read()
+                log('[ GET ] %d - %s' % (response.status_code, response.url))
+            if response.headers.get('content-type', '').lower().startswith('text/'):
+                content = response.text
+            else:
+                content = response.content
             if usecache:
-                urllib2.webpage2html_cache[fullpath] = content
+                webpage2html_cache[fullpath] = content
             return content
-        except urllib2.HTTPError, err:
+        except Exception as ex:
             if verbose:
-                log('[ WARN ] %d - %s %s' % (err.code, fullpath, err.reason), 'yellow')
-            return ''
-        except urllib2.URLError, err:
-            if verbose:
-                log('[ WARN ] URLError - %s %s' % (fullpath, err.reason), 'yellow')
+                log('[ WARN ] %s - %s %s' % ('???', fullpath, ex), 'yellow')
             return ''
             
     elif os.path.exists(index):
