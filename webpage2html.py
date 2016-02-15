@@ -37,30 +37,32 @@ def get(index, relpath=None, verbose=True, usecache=True):
         fullpath = absurl(index, relpath)
         if not fullpath:
             if verbose: log('[ WARN ] invalid path, %s %s' % (index, relpath), 'yellow')
-            return ''
+            return '', None
         # urllib2 only accepts valid url, the following code is taken from urllib
         # http://svn.python.org/view/python/trunk/Lib/urllib.py?r1=71780&r2=71779&pathrev=71780
         fullpath = urllib.quote(fullpath, safe="%/:=&?~#+!$,;'@()*[]")
         if usecache:
             if fullpath in webpage2html_cache:
                 if verbose: log('[ CACHE HIT ] - %s' % fullpath)
-                return webpage2html_cache[fullpath]
+                return webpage2html_cache[fullpath], None
         headers = {
             'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)'
         }
         try:
             response = requests.get(fullpath, headers=headers)
             if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
-            if response.headers.get('content-type', '').lower().startswith('text/'):
+            if response.status_code >= 400 or response.status_code < 200:
+                content = ''
+            elif response.headers.get('content-type', '').lower().startswith('text/'):
                 content = response.text
             else:
                 content = response.content
             if usecache:
-                webpage2html_cache[fullpath] = content
-            return content
+                webpage2html_cache[response.url] = content
+            return content, response.url
         except Exception as ex:
             if verbose: log('[ WARN ] %s - %s %s' % ('???', fullpath, ex), 'yellow')
-            return ''
+            return '', None
             
     elif os.path.exists(index):
         if relpath:
@@ -71,21 +73,21 @@ def get(index, relpath=None, verbose=True, usecache=True):
             try:
                 ret = open(fullpath).read()
                 if verbose: log('[ LOCAL ] found - %s' % fullpath)
-                return ret
+                return ret, None
             except IOError, err:
                 if verbose: log('[ WARN ] file not found - %s %s' % (fullpath, str(err)), 'yellow')
-                return ''
+                return '', None
         else:
             try:
                 ret = open(index).read()
                 if verbose: log('[ LOCAL ] found - %s' % index)
-                return ret
+                return ret, None
             except IOError, err:
                 if verbose: log('[ WARN ] file not found - %s %s' % (index, str(err)), 'yellow')
-                return ''
+                return '', None
     else:
         if verbose: log('[ ERROR ] invalid index - %s' % index, 'red')
-        return ''
+        return '', None
 
 def image_to_base64(index, src, verbose=True):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
@@ -102,7 +104,7 @@ def image_to_base64(index, src, verbose=True):
         fmt = 'svg+xml'
     else:
         fmt = 'png'
-    data = get(index, src, verbose=verbose)
+    data, _ = get(index, src, verbose=verbose)
     if data:
         return ('data:image/%s;base64,' % fmt) + base64.b64encode(data)
     else:
@@ -129,7 +131,10 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html 
     '''
-    html_doc = get(index, verbose = verbose)
+    origin_index = index
+    html_doc, new_index = get(index, verbose = verbose)
+
+    if new_index: index = new_index
 
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
@@ -141,7 +146,8 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type = new_type)
                 css['data-href'] = link['href']
-                new_css_content = handle_css_content(absurl(index, link['href']), get(index, relpath = link['href'], verbose=verbose), verbose=verbose)
+                css_data, _ = get(index, relpath = link['href'], verbose=verbose)
+                new_css_content = handle_css_content(absurl(index, link['href']), css_data, verbose=verbose)
                 if False: # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
                     link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
                 else:
@@ -159,7 +165,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         code = soup.new_tag('script', type=new_type)
         code['data-src'] = js['src']
         try:
-            js_str = get(index, relpath = js['src'], verbose = verbose)
+            js_str, _ = get(index, relpath = js['src'], verbose = verbose)
             if js_str.find('</script>') > -1:
                 code['src'] = 'data:text/javascript;base64,' + base64.b64encode(js_str)
             elif js_str.find(']]>') < 0:
