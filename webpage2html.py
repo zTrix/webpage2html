@@ -155,7 +155,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         if link.get('href'):
             if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
                 # skip css hosted by google
-                if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
+                # if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type = new_type)
                 css['data-href'] = link['href']
