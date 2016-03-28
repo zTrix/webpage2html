@@ -22,10 +22,10 @@ def log(s, color = None, on_color = None, attrs = None, new_line = True):
         sys.stderr.write('\n')
     sys.stderr.flush()
 
-def absurl(index, relpath=''):
+def absurl(index, relpath='', normpath=os.path.normpath):
     if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
         new = urlparse.urlparse(urlparse.urljoin(index, relpath))
-        return urlparse.urlunsplit((new.scheme, (new.port == None) and new.hostname or new.netloc, new.path, new.query, ''))
+        return urlparse.urlunsplit((new.scheme, (new.port == None) and new.hostname or new.netloc, normpath(new.path), new.query, ''))
     else:
         return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
