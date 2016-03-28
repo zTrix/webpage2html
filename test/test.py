@@ -30,6 +30,12 @@ class Test(unittest.TestCase):
         assert 'href="another_dir/questions/110240"' in gen, gen
         assert 'href="another_dir/static/img/favicon.ico"' in gen, gen
 
+    def test_web_font(self):
+        print ''
+        gen = webpage2html.generate('./webfont.html', comment=False, full_url=True)
+        # FIXME: do not cover all web fonts with hash postfix
+        assert 'application/x-font-ttf' in gen, gen
+
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):
         os.chdir(os.path.dirname(sys.argv[0]))
