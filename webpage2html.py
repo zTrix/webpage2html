@@ -89,24 +89,37 @@ def get(index, relpath=None, verbose=True, usecache=True):
         if verbose: log('[ ERROR ] invalid index - %s' % index, 'red')
         return '', None
 
-def image_to_base64(index, src, verbose=True):
+def data_to_base64(index, src, verbose=True):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
     sp = urlparse.urlparse(src).path
     if src.strip().startswith('data:'):
         return src
     if sp.lower().endswith('png'):
-        fmt = 'png'
+        fmt = 'image/png'
     elif sp.lower().endswith('gif'):
-        fmt = 'gif'
+        fmt = 'image/gif'
     elif sp.lower().endswith('jpg') or src.lower().endswith('jpeg'):
-        fmt = 'jpg'
+        fmt = 'image/jpg'
     elif sp.lower().endswith('svg'):
-        fmt = 'svg+xml'
+        fmt = 'image/svg+xml'
+    elif sp.lower().endswith('ttf'):
+        fmt = 'application/x-font-ttf'
+    elif sp.lower().endswith('otf'):
+        fmt = 'application/x-font-opentype'
+    elif sp.lower().endswith('woff'):
+        fmt = 'application/font-woff'
+    elif sp.lower().endswith('woff2'):
+        fmt = 'application/font-woff2'
+    elif sp.lower().endswith('eot'):
+        fmt = 'application/vnd.ms-fontobject'
+    elif sp.lower().endswith('sfnt'):
+        fmt = 'application/font-sfnt'
     else:
-        fmt = 'png'
+        # what if it's not a valid font type? may not matter
+        fmt = 'image/png'
     data, _ = get(index, src, verbose=verbose)
     if data:
-        return ('data:image/%s;base64,' % fmt) + base64.b64encode(data)
+        return ('data:%s;base64,' % fmt) + base64.b64encode(data)
     else:
         return src
 
@@ -119,10 +132,10 @@ def handle_css_content(index, css, verbose=True):
     reg = re.compile(r'url\s*\((.+?)\)')
     def repl(matchobj):
         src = matchobj.group(1).strip(' \'"')
-        if src.lower().endswith('woff') or src.lower().endswith('ttf') or src.lower().endswith('otf') or src.lower().endswith('eot'):
-            # dont handle font data uri currently
-            return 'url(' + src + ')'
-        return 'url(' + image_to_base64(index, src, verbose=verbose) + ')'
+        # if src.lower().endswith('woff') or src.lower().endswith('ttf') or src.lower().endswith('otf') or src.lower().endswith('eot'):
+        #     # dont handle font data uri currently
+        #     return 'url(' + src + ')'
+        return 'url(' + data_to_base64(index, src, verbose=verbose) + ')'
     css = reg.sub(repl, css)
     return css
 
@@ -183,7 +196,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     for img in soup('img'):
         if not img.get('src'): continue
         img['data-src'] = img['src']
-        img['src'] = image_to_base64(index, img['src'], verbose=verbose)
+        img['src'] = data_to_base64(index, img['src'], verbose=verbose)
         def check_alt(attr):
             if img.has_attr(attr) and img[attr].startswith('this.src='):
                 # we do not handle this situation yet, just warn the user
