@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 import os, sys, re, base64, urlparse, urllib2, urllib, datetime
 from bs4 import BeautifulSoup
@@ -53,8 +54,8 @@ def get(index, relpath=None, verbose=True, usecache=True):
             if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
             if response.status_code >= 400 or response.status_code < 200:
                 content = ''
-            elif response.headers.get('content-type', '').lower().startswith('text/'):
-                content = response.text
+            # elif response.headers.get('content-type', '').lower().startswith('text/'):
+            #     content = response.text
             else:
                 content = response.content
             if usecache:
