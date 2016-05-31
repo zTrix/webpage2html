@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 import os, sys, re, base64, urlparse, urllib2, urllib, datetime
 from bs4 import BeautifulSoup
@@ -53,8 +54,8 @@ def get(index, relpath=None, verbose=True, usecache=True):
             if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
             if response.status_code >= 400 or response.status_code < 200:
                 content = ''
-            elif response.headers.get('content-type', '').lower().startswith('text/'):
-                content = response.text
+            # elif response.headers.get('content-type', '').lower().startswith('text/'):
+            #     content = response.text
             else:
                 content = response.content
             if usecache:
@@ -123,9 +124,18 @@ def data_to_base64(index, src, verbose=True):
     else:
         return src
 
+css_encoding_re = re.compile(r'''@charset\s+["']([-_a-zA-Z0-9]+)["']\;''', re.I)
+
 def handle_css_content(index, css, verbose=True):
     if not css:
         return css
+    if not isinstance(css, unicode):
+        mo = css_encoding_re.search(css)
+        if mo:
+            try:
+                css = css.decode(mo.group(1))
+            except:
+                log('[ WARN ] failed to convert css to encoding %s' % mo.group(1), 'yellow')
     # Watch out! how to handle urls which contain parentheses inside? Oh god, css does not support such kind of urls
     # I tested such url in css, and, unfortunately, the css rule is broken. LOL!
     # I have to say that, CSS is awesome!
