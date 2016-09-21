@@ -215,7 +215,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         check_alt('onmouseover')
         check_alt('onmouseout')
     for tag in soup(True):
-        if full_url and tag.name == 'a' and tag.has_attr('href'):
+        if full_url and tag.name == 'a' and tag.has_attr('href') and not tag['href'].startswith('#') :
             tag['data-href'] = tag['href']
             tag['href'] = absurl(index, tag['href'])
         if tag.has_attr('style'):
