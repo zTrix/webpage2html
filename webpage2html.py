@@ -8,6 +8,8 @@ import requests
 
 re_css_url = re.compile('(url\(.*?\))')
 
+CHECK_CERTIFICATES = True
+
 try:
     from termcolor import colored
 except:
@@ -50,7 +52,7 @@ def get(index, relpath=None, verbose=True, usecache=True):
             'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)'
         }
         try:
-            response = requests.get(fullpath, headers=headers)
+            response = requests.get(fullpath, headers=headers, verify=CHECK_CERTIFICATES)
             if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
             if response.status_code >= 400 or response.status_code < 200:
                 content = ''
@@ -249,6 +251,7 @@ options:
     -h, --help              help page, you are reading this now!
     -q, --quite             don't show verbose url get log in stderr
     -s, --script            keep javascript in the generated html 
+    -c, --certificates      disables certificate checking
 
 examples:
 
@@ -267,10 +270,11 @@ examples:
 """)
 
 def main():
+    global CHECK_CERTIFICATES
     argv = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(argv, 'hqs', ['help', 'quite', 'script'])
+        opts, args = getopt.getopt(argv, 'hqsc', ['help', 'quite', 'script', 'certificates'])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -286,6 +290,8 @@ def main():
             kwargs['verbose'] = False
         elif o in ('-s', '--script'):
             kwargs['keep_script'] = True
+        elif o in ('-c', '--certificates'):
+            CHECK_CERTIFICATES = False
 
     if len(args) != 1:
         usage()
