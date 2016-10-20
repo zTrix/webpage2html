@@ -3,6 +3,7 @@
 import os, sys, unittest
 import webpage2html
 
+
 class Test(unittest.TestCase):
 
     def test_none(self):
@@ -35,6 +36,14 @@ class Test(unittest.TestCase):
         gen = webpage2html.generate('./webfont.html', comment=False, full_url=True)
         # FIXME: do not cover all web fonts with hash postfix
         assert 'application/x-font-ttf' in gen, gen
+
+    def test_secure_with_key(self):
+        print ''
+        self.assertEqual(webpage2html.generate("https://139.129.205.156:23333/", comment=False, verbose=False), '')
+
+    def test_secure_ignore_key(self):
+        print ''
+        self.assertNotEqual(webpage2html.generate("https://139.129.205.156:23333/", comment=False, verbose=False, verify=False), '')
 
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):
