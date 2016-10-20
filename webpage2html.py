@@ -94,6 +94,7 @@ def get(index, rel_path='', verbose=True, verify=True):
 
 
 def data_to_base64(index, src, verbose=True):
+    # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
     sp = urlparse.urlparse(src).path
     if src.strip().startswith('data:'):
         return src
@@ -118,6 +119,7 @@ def data_to_base64(index, src, verbose=True):
     elif sp.lower().endswith('sfnt'):
         fmt = 'application/font-sfnt'
     else:
+        # what if it's not a valid font type? may not matter
         fmt = 'image/png'
     data, _ = get(index, src, verbose=verbose)
     if data:
@@ -137,10 +139,16 @@ def handle_css_content(index, css, verbose=True):
                 css = css.decode(mo.group(1))
             except:
                 log('[ WARN ] failed to convert css to encoding %s' % mo.group(1), 'yellow')
+    # Watch out! how to handle urls which contain parentheses inside? Oh god, css does not support such kind of urls
+    # I tested such url in css, and, unfortunately, the css rule is broken. LOL!
+    # I have to say that, CSS is awesome!
     reg = re.compile(r'url\s*\((.+?)\)')
 
     def rep_l(match_obj):
         src = match_obj.group(1).strip(' \'"')
+        # if src.lower().endswith('woff') or src.lower().endswith('ttf') or src.lower().endswith('otf') or src.lower().endswith('eot'):
+        #     # dont handle font data uri currently
+        #     return 'url(' + src + ')'
         return 'url(' + data_to_base64(index, src, verbose=verbose) + ')'
     css = reg.sub(rep_l, css)
     return css
@@ -152,10 +160,13 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     if new_index:
         index = new_index
 
+    # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
     for link in soup('link'):
         if link.get('href'):
             if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
+                # skip css hosted by google
+                # if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type = new_type)
                 css['data-href'] = link['href']
@@ -184,11 +195,15 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
             elif js_str.find(']]>') < 0:
                 code.string = '<!--//--><![CDATA[//><!--\n' + js_str + '\n//--><!]]>'
             else:
+                # replace ]]> does not work at all for chrome, do not believe
+                # http://en.wikipedia.org/wiki/CDATA
+                # code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
                 code.string = js_str.encode('utf-8')
         except:
             if verbose:
                 log(repr(js_str))
             raise
+        # print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
         js.replace_with(code)
     for img in soup('img'):
         if not img.get('src'): continue
@@ -231,7 +246,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--quite', action='store_true', help="don't show verbose url get log in stderr")
     parser.add_argument('-s', '--script', action='store_true', help="keep javascript in the generated html ")
-    parser.add_argument('-k', '--insecure',action='store_true', help="")
+    parser.add_argument('-k', '--insecure',action='store_true', help="ignore the certificate")
     parser.add_argument("url", help="the website to store")
     args = parser.parse_args()
     if args.quite:
