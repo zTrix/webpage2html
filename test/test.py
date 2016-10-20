@@ -41,7 +41,7 @@ class Test(unittest.TestCase):
         print ''
         self.assertEqual(webpage2html.generate("https://139.129.205.156:23333/", comment=False, verbose=False), '')
 
-    def test_secure_ignore_key(self):
+    def test_secure_ignore_ke(self):
         print ''
         self.assertNotEqual(webpage2html.generate("https://139.129.205.156:23333/", comment=False, verbose=False, verify=False), '')
 
