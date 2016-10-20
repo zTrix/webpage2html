@@ -20,11 +20,11 @@ except:
         return text
 
 
-def log(mse, color=None, on_color=None, attr=None, new_line=True):
+def log(mse, color=None, on_color=None, attrs=None, new_line=True):
     if not color:
         print >> sys.stderr, str(mse)
     else:
-        print >> sys.stderr, colored(str(mse), color, on_color, attr)
+        print >> sys.stderr, colored(str(mse), color, on_color, attrs)
     if new_line:
         sys.stderr.write('\n')
     sys.stderr.flush()
