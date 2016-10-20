@@ -12,7 +12,12 @@ import lxml
 import requests
 import argparse
 from bs4 import BeautifulSoup
-from termcolor import colored
+
+try:
+    from termcolor import colored
+except:
+    def colored(text, color=None, on_color=None, attrs=None):
+        return text
 
 
 def log(mse, color=None, on_color=None, attr=None, new_line=True):
