@@ -302,7 +302,6 @@ def main():
     rs = generate(args.url, **kwargs)
     sys.stdout.write(rs)
 
-
 if __name__ == '__main__':
     main()
 
