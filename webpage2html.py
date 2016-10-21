@@ -67,12 +67,13 @@ def get(index, relpath=None, verbose=True, usecache=True):
             
     elif os.path.exists(index):
         if relpath:
+            relpath = relpath.split('#')[0].split('?')[0]
             if os.path.exists(relpath):
                 fullpath = relpath
             else:
                 fullpath = os.path.normpath(os.path.join(os.path.dirname(index), relpath))
             try:
-                ret = open(fullpath).read()
+                ret = open(fullpath, 'rb').read()
                 if verbose: log('[ LOCAL ] found - %s' % fullpath)
                 return ret, None
             except IOError, err:
@@ -80,7 +81,7 @@ def get(index, relpath=None, verbose=True, usecache=True):
                 return '', None
         else:
             try:
-                ret = open(index).read()
+                ret = open(index, 'rb').read()
                 if verbose: log('[ LOCAL ] found - %s' % index)
                 return ret, None
             except IOError, err:
