@@ -5,6 +5,7 @@ import os, sys, re, base64, urlparse, urllib2, urllib, datetime
 from bs4 import BeautifulSoup
 import lxml
 import requests
+import argparse
 
 re_css_url = re.compile('(url\(.*?\))')
 
@@ -14,7 +15,8 @@ except:
     def colored(text, color=None, on_color=None, attrs=None):
         return text
 
-def log(s, color = None, on_color = None, attrs = None, new_line = True):
+
+def log(s, color=None, on_color=None, attrs=None, new_line=True):
     if not color:
         print >> sys.stderr, str(s),
     else:
@@ -23,16 +25,20 @@ def log(s, color = None, on_color = None, attrs = None, new_line = True):
         sys.stderr.write('\n')
     sys.stderr.flush()
 
+
 def absurl(index, relpath='', normpath=os.path.normpath):
     if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
         new = urlparse.urlparse(urlparse.urljoin(index, relpath))
-        return urlparse.urlunsplit((new.scheme, (new.port == None) and new.hostname or new.netloc, normpath(new.path), new.query, ''))
+        return urlparse.urlunsplit(
+            (new.scheme, (new.port == None) and new.hostname or new.netloc, normpath(new.path), new.query, ''))
     else:
         return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
+
 webpage2html_cache = {}
 
-def get(index, relpath=None, verbose=True, usecache=True):
+
+def get(index, relpath=None, verbose=True, usecache=True, verify=True):
     global webpage2html_cache
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
@@ -50,7 +56,7 @@ def get(index, relpath=None, verbose=True, usecache=True):
             'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)'
         }
         try:
-            response = requests.get(fullpath, headers=headers)
+            response = requests.get(fullpath, headers=headers, verify=verify)
             if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
             if response.status_code >= 400 or response.status_code < 200:
                 content = ''
@@ -64,7 +70,7 @@ def get(index, relpath=None, verbose=True, usecache=True):
         except Exception as ex:
             if verbose: log('[ WARN ] %s - %s %s' % ('???', fullpath, ex), 'yellow')
             return '', None
-            
+
     elif os.path.exists(index):
         if relpath:
             relpath = relpath.split('#')[0].split('?')[0]
@@ -90,6 +96,7 @@ def get(index, relpath=None, verbose=True, usecache=True):
     else:
         if verbose: log('[ ERROR ] invalid index - %s' % index, 'red')
         return '', None
+
 
 def data_to_base64(index, src, verbose=True):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
@@ -125,7 +132,9 @@ def data_to_base64(index, src, verbose=True):
     else:
         return src
 
+
 css_encoding_re = re.compile(r'''@charset\s+["']([-_a-zA-Z0-9]+)["']\;''', re.I)
+
 
 def handle_css_content(index, css, verbose=True):
     if not css:
@@ -141,22 +150,25 @@ def handle_css_content(index, css, verbose=True):
     # I tested such url in css, and, unfortunately, the css rule is broken. LOL!
     # I have to say that, CSS is awesome!
     reg = re.compile(r'url\s*\((.+?)\)')
+
     def repl(matchobj):
         src = matchobj.group(1).strip(' \'"')
         # if src.lower().endswith('woff') or src.lower().endswith('ttf') or src.lower().endswith('otf') or src.lower().endswith('eot'):
         #     # dont handle font data uri currently
         #     return 'url(' + src + ')'
         return 'url(' + data_to_base64(index, src, verbose=verbose) + ')'
+
     css = reg.sub(repl, css)
     return css
 
-def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True):
+
+def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True):
     '''
     given a index url such as http://www.google.com, http://custom.domain/index.html
-    return generated single html 
+    return generated single html
     '''
     origin_index = index
-    html_doc, new_index = get(index, verbose = verbose)
+    html_doc, new_index = get(index, verbose=verbose, verify=verify)
 
     if new_index: index = new_index
 
@@ -164,15 +176,16 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     soup = BeautifulSoup(html_doc, 'lxml')
     for link in soup('link'):
         if link.get('href'):
-            if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
+            if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (
+                link.get('rel') or [])):
                 # skip css hosted by google
                 # if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
                 new_type = 'text/css' if not link.get('type') else link['type']
-                css = soup.new_tag('style', type = new_type)
+                css = soup.new_tag('style', type=new_type)
                 css['data-href'] = link['href']
-                css_data, _ = get(index, relpath = link['href'], verbose=verbose)
+                css_data, _ = get(index, relpath=link['href'], verbose=verbose)
                 new_css_content = handle_css_content(absurl(index, link['href']), css_data, verbose=verbose)
-                if False: # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
+                if False:  # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
                     link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
                 else:
                     css.string = new_css_content
@@ -189,34 +202,36 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         code = soup.new_tag('script', type=new_type)
         code['data-src'] = js['src']
         try:
-            js_str, _ = get(index, relpath = js['src'], verbose = verbose)
+            js_str, _ = get(index, relpath=js['src'], verbose=verbose)
             if js_str.find('</script>') > -1:
                 code['src'] = 'data:text/javascript;base64,' + base64.b64encode(js_str)
             elif js_str.find(']]>') < 0:
                 code.string = '<!--//--><![CDATA[//><!--\n' + js_str + '\n//--><!]]>'
             else:
-                # replace ]]> does not work at all for chrome, do not believe 
+                # replace ]]> does not work at all for chrome, do not believe
                 # http://en.wikipedia.org/wiki/CDATA
                 # code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
                 code.string = js_str.encode('utf-8')
         except:
             if verbose: log(repr(js_str))
             raise
-        #print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
+        # print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
         js.replace_with(code)
     for img in soup('img'):
         if not img.get('src'): continue
         img['data-src'] = img['src']
         img['src'] = data_to_base64(index, img['src'], verbose=verbose)
+
         def check_alt(attr):
             if img.has_attr(attr) and img[attr].startswith('this.src='):
                 # we do not handle this situation yet, just warn the user
                 if verbose: log('[ WARN ] %s found in img tag and unhandled, which may break page' % (attr), 'yellow')
+
         check_alt('onerror')
         check_alt('onmouseover')
         check_alt('onmouseout')
     for tag in soup(True):
-        if full_url and tag.name == 'a' and tag.has_attr('href') and not tag['href'].startswith('#') :
+        if full_url and tag.name == 'a' and tag.has_attr('href') and not tag['href'].startswith('#'):
             tag['data-href'] = tag['href']
             tag['href'] = absurl(index, tag['href'])
         if tag.has_attr('style'):
@@ -232,12 +247,15 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     # finally insert some info into comments
     if comment:
         for html in soup('html'):
-            html.insert(0, BeautifulSoup('<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (index, datetime.datetime.now().ctime()), 'lxml'))
+            html.insert(0, BeautifulSoup(
+                '<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (
+                index, datetime.datetime.now().ctime()), 'lxml'))
             break
     if prettify:
         return soup.prettify(formatter='html')
     else:
         return str(soup)
+
 
 def usage():
     print("""
@@ -249,7 +267,7 @@ options:
 
     -h, --help              help page, you are reading this now!
     -q, --quite             don't show verbose url get log in stderr
-    -s, --script            keep javascript in the generated html 
+    -s, --script            keep javascript in the generated html
 
 examples:
 
@@ -267,32 +285,22 @@ examples:
         combine local saved xxx.html with a directory named xxx_files together into a single html file
 """)
 
+
 def main():
-    argv = sys.argv[1:]
-    import getopt
-    try:
-        opts, args = getopt.getopt(argv, 'hqs', ['help', 'quite', 'script'])
-    except getopt.GetoptError as err:
-        print(str(err))
-        usage()
-        sys.exit(10)
-
-    kwargs = { }
-
-    for o, a in opts:
-        if o in ('-h', '--help'):
-            usage()
-            sys.exit(0)
-        elif o in ('-q', '--quite'):
-            kwargs['verbose'] = False
-        elif o in ('-s', '--script'):
-            kwargs['keep_script'] = True
-
-    if len(args) != 1:
-        usage()
-        sys.exit(10)
-
-    rs = generate(args[0], **kwargs)
+    kwargs = {}
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-q', '--quite', action='store_true', help="don't show verbose url get log in stderr")
+    parser.add_argument('-s', '--script', action='store_true', help="keep javascript in the generated html ")
+    parser.add_argument('-k', '--insecure', action='store_true', help="ignore the certificate")
+    parser.add_argument("url", help="the website to store")
+    args = parser.parse_args()
+    if args.quite:
+        kwargs['verbose'] = False
+    if args.script:
+        kwargs['keep_script'] = True
+    if args.insecure:
+        kwargs['verify'] = False
+    rs = generate(args.url, **kwargs)
     sys.stdout.write(rs)
 
 if __name__ == '__main__':
