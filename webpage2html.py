@@ -66,7 +66,7 @@ def get(index, relpath=None, verbose=True, usecache=True, verify=True):
                 content = response.content
             if usecache:
                 webpage2html_cache[response.url] = content
-            return content, response.url
+            return content, {'url': response.url, 'content-type': response.headers.get('content-type')}
         except Exception as ex:
             if verbose: log('[ WARN ] %s - %s %s' % ('???', fullpath, ex), 'yellow')
             return '', None
@@ -100,33 +100,39 @@ def get(index, relpath=None, verbose=True, usecache=True, verify=True):
 
 def data_to_base64(index, src, verbose=True):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
-    sp = urlparse.urlparse(src).path
+    sp = urlparse.urlparse(src).path.lower()
     if src.strip().startswith('data:'):
         return src
-    if sp.lower().endswith('png'):
+    if sp.endswith('.png'):
         fmt = 'image/png'
-    elif sp.lower().endswith('gif'):
+    elif sp.endswith('.gif'):
         fmt = 'image/gif'
-    elif sp.lower().endswith('jpg') or src.lower().endswith('jpeg'):
+    elif sp.endswith('.jpg') or sp.endswith('.jpeg'):
         fmt = 'image/jpg'
-    elif sp.lower().endswith('svg'):
+    elif sp.endswith('.svg'):
         fmt = 'image/svg+xml'
-    elif sp.lower().endswith('ttf'):
+    elif sp.endswith('.ttf'):
         fmt = 'application/x-font-ttf'
-    elif sp.lower().endswith('otf'):
+    elif sp.endswith('.otf'):
         fmt = 'application/x-font-opentype'
-    elif sp.lower().endswith('woff'):
+    elif sp.endswith('.woff'):
         fmt = 'application/font-woff'
-    elif sp.lower().endswith('woff2'):
+    elif sp.endswith('.woff2'):
         fmt = 'application/font-woff2'
-    elif sp.lower().endswith('eot'):
+    elif sp.endswith('.eot'):
         fmt = 'application/vnd.ms-fontobject'
-    elif sp.lower().endswith('sfnt'):
+    elif sp.endswith('.sfnt'):
         fmt = 'application/font-sfnt'
+    elif sp.endswith('.css'):
+        fmt = 'text/css'
+    elif sp.endswith('.js'):
+        fmt = 'application/javascript'
     else:
         # what if it's not a valid font type? may not matter
         fmt = 'image/png'
-    data, _ = get(index, src, verbose=verbose)
+    data, extra_data = get(index, src, verbose=verbose)
+    if extra_data and extra_data.get('content-type'):
+        fmt = extra_data.get('content-type').replace(' ', '')
     if data:
         return ('data:%s;base64,' % fmt) + base64.b64encode(data)
     else:
@@ -168,9 +174,9 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     return generated single html
     '''
     origin_index = index
-    html_doc, new_index = get(index, verbose=verbose, verify=verify)
+    html_doc, extra_data = get(index, verbose=verbose, verify=verify)
 
-    if new_index: index = new_index
+    if extra_data and extra_data.get('url'): index = extra_data['url']
 
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')

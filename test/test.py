@@ -36,10 +36,20 @@ class Test(unittest.TestCase):
         # FIXME: do not cover all web fonts with hash postfix
         assert 'application/x-font-ttf' in gen, gen
 
+    def test_text_css(self):
+        print ''
+        gen = webpage2html.generate('./text_css.html', comment=False, full_url=True)
+        assert '<style data-href="./text_css/style.css" type="text/css">@import url(data:text/css;base64,Cmh' in gen
+
 if __name__ == '__main__':
     if os.path.dirname(sys.argv[0]):
         os.chdir(os.path.dirname(sys.argv[0]))
     suite = unittest.TestLoader().loadTestsFromTestCase(Test)
+    tests = []
+    if len(sys.argv) > 1:
+        tests.extend(sys.argv[1:])
+    if len(tests):
+        suite = unittest.TestSuite(map(Test, tests))
     rs = unittest.TextTestRunner(verbosity=2).run(suite)
     if len(rs.errors) > 0 or len(rs.failures) > 0:
         sys.exit(10)
