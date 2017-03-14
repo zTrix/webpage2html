@@ -38,7 +38,7 @@ def absurl(index, relpath='', normpath=os.path.normpath):
 webpage2html_cache = {}
 
 
-def get(index, relpath=None, verbose=True, usecache=True, verify=True):
+def get(index, relpath=None, verbose=True, usecache=True, verify=True, ignore_error=False):
     global webpage2html_cache
     if index.startswith('http') or (relpath and relpath.startswith('http')):
         fullpath = absurl(index, relpath)
@@ -58,7 +58,7 @@ def get(index, relpath=None, verbose=True, usecache=True, verify=True):
         try:
             response = requests.get(fullpath, headers=headers, verify=verify)
             if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
-            if response.status_code >= 400 or response.status_code < 200:
+            if not ignore_error and (response.status_code >= 400 or response.status_code < 200):
                 content = ''
             # elif response.headers.get('content-type', '').lower().startswith('text/'):
             #     content = response.text
@@ -168,13 +168,13 @@ def handle_css_content(index, css, verbose=True):
     return css
 
 
-def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True):
+def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True, errorpage=False):
     '''
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html
     '''
     origin_index = index
-    html_doc, extra_data = get(index, verbose=verbose, verify=verify)
+    html_doc, extra_data = get(index, verbose=verbose, verify=verify, ignore_error=errorpage)
 
     if extra_data and extra_data.get('url'): index = extra_data['url']
 
@@ -298,6 +298,7 @@ def main():
     parser.add_argument('-q', '--quite', action='store_true', help="don't show verbose url get log in stderr")
     parser.add_argument('-s', '--script', action='store_true', help="keep javascript in the generated html ")
     parser.add_argument('-k', '--insecure', action='store_true', help="ignore the certificate")
+    parser.add_argument('--errorpage', action='store_true', help="crawl an error page")
     parser.add_argument("url", help="the website to store")
     args = parser.parse_args()
     if args.quite:
@@ -306,6 +307,8 @@ def main():
         kwargs['keep_script'] = True
     if args.insecure:
         kwargs['verify'] = False
+    if args.errorpage:
+        kwargs['errorpage'] = True
     rs = generate(args.url, **kwargs)
     sys.stdout.write(rs)
 
