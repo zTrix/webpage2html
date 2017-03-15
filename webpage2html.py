@@ -29,8 +29,8 @@ def log(s, color=None, on_color=None, attrs=None, new_line=True):
 def absurl(index, relpath='', normpath=os.path.normpath):
     if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
         new = urlparse.urlparse(urlparse.urljoin(index, relpath))
-        return urlparse.urlunsplit(
-            (new.scheme, (new.port == None) and new.hostname or new.netloc, normpath(new.path), new.query, ''))
+        # netloc contains basic auth, so do not use domain
+        return urlparse.urlunsplit((new.scheme, new.netloc, normpath(new.path), new.query, ''))
     else:
         return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
 
