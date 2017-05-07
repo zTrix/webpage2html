@@ -27,8 +27,8 @@ class Test(unittest.TestCase):
     def test_full_url(self):
         print ''
         gen = webpage2html.generate('./another_dir/test_full_url.html', comment=False, full_url=True)
-        assert 'href="another_dir/questions/110240"' in gen, gen
-        assert 'href="another_dir/static/img/favicon.ico"' in gen, gen
+        assert 'href="another_dir/questions/110240"' in gen or 'href="./another_dir/questions/110240"' in gen, gen
+        assert 'href="another_dir/static/img/favicon.ico"' in gen or 'href="./another_dir/static/img/favicon.ico"' in gen, gen
 
     def test_web_font(self):
         print ''

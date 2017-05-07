@@ -26,14 +26,18 @@ def log(s, color=None, on_color=None, attrs=None, new_line=True):
     sys.stderr.flush()
 
 
-def absurl(index, relpath='', normpath=os.path.normpath):
+def absurl(index, relpath=None, normpath=None):
+    if normpath is None:
+        normpath = lambda x:x
     if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
         new = urlparse.urlparse(urlparse.urljoin(index, relpath))
         # netloc contains basic auth, so do not use domain
         return urlparse.urlunsplit((new.scheme, new.netloc, normpath(new.path), new.query, ''))
     else:
-        return os.path.normpath(os.path.join(os.path.dirname(index), relpath))
-
+        if relpath:
+            return normpath(os.path.join(os.path.dirname(index), relpath))
+        else:
+            return index
 
 webpage2html_cache = {}
 
