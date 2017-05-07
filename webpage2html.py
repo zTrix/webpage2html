@@ -127,7 +127,7 @@ def data_to_base64(index, src, verbose=True):
         fmt = 'application/vnd.ms-fontobject'
     elif sp.endswith('.sfnt'):
         fmt = 'application/font-sfnt'
-    elif sp.endswith('.css'):
+    elif sp.endswith('.css') or sp.endswith('.less'):
         fmt = 'text/css'
     elif sp.endswith('.js'):
         fmt = 'application/javascript'
@@ -186,15 +186,16 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     soup = BeautifulSoup(html_doc, 'lxml')
     for link in soup('link'):
         if link.get('href'):
-            if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (
-                link.get('rel') or [])):
-                # skip css hosted by google
-                # if link['href'].lower().startswith('http://fonts.googleapis.com'): continue
+            if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type=new_type)
                 css['data-href'] = link['href']
                 css_data, _ = get(index, relpath=link['href'], verbose=verbose)
                 new_css_content = handle_css_content(absurl(index, link['href']), css_data, verbose=verbose)
+                # if "stylesheet/less" in '\n'.join(link.get('rel') or []).lower():    # fix browser side less: http://lesscss.org/#client-side-usage
+                #     # link['href'] = 'data:text/less;base64,' + base64.b64encode(css_data)
+                #     link['data-href'] = link['href']
+                #     link['href'] = absurl(index, link['href'])
                 if False:  # new_css_content.find('@font-face') > -1 or new_css_content.find('@FONT-FACE') > -1:
                     link['href'] = 'data:text/css;base64,' + base64.b64encode(new_css_content)
                 else:

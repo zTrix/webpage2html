@@ -49,6 +49,20 @@ I have tried the default `HTMLParser` and `html5lib` as the backend parser for B
 
 The `termcolor` package is for colored log output support if you like.
 
+## Cases still does not work
+
+### browser side less compiling
+
+The page embeds less css directly and use less.js to compile in browser. In this case, I still cannot find a way to embed the less code into generated html to make it work.
+
+```
+<link rel="stylesheet/less" type="text/css" href="http://dghubble.com/blog/theme/css/style.less">
+<script src="http://dghubble.com/blog/theme/js/less-1.5.0.min.js" type="text/javascript"></script>
+```
+
+ - http://lesscss.org/#client-side-usage
+ - http://dghubble.com/blog/posts/.bashprofile-.profile-and-.bashrc-conventions/
+
 # Thanks
 
  1. Thanks lukin.a.i who submitted patch to fix not recognised css link (rel=stylesheet) issue
