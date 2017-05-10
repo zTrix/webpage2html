@@ -67,6 +67,14 @@ The page embeds less css directly and use less.js to compile in browser. In this
 
  1. Thanks lukin.a.i who submitted patch to fix not recognised css link (rel=stylesheet) issue
 
+# License
+
+[webpage2html] use [SATA License](LICENSE.txt) (Star And Thank Author License), so you have to star this project before using. Read the [license](LICENSE.txt) carefully.
+
 # Reference
 
  1. Java port of this project. https://github.com/cedricblondeau/webpage2html-java
+
+[webpage2html]:https://github.com/zTrix/webpage2html
+
+
