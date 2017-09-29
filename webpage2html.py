@@ -190,6 +190,9 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type=new_type)
                 css['data-href'] = link['href']
+                for attr in link.attrs:
+                    if attr in ['href']: continue
+                    css[attr] = link[attr]
                 css_data, _ = get(index, relpath=link['href'], verbose=verbose)
                 new_css_content = handle_css_content(absurl(index, link['href']), css_data, verbose=verbose)
                 # if "stylesheet/less" in '\n'.join(link.get('rel') or []).lower():    # fix browser side less: http://lesscss.org/#client-side-usage
