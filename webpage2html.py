@@ -1,11 +1,18 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import os, sys, re, base64, urlparse, urllib2, urllib, datetime
-from bs4 import BeautifulSoup
+import os
+import sys
+import re
+import base64
+import urlparse
+import urllib2
+import urllib
+import datetime
 import lxml
 import requests
 import argparse
+from bs4 import BeautifulSoup
 
 re_css_url = re.compile('(url\(.*?\))')
 
@@ -38,6 +45,7 @@ def absurl(index, relpath=None, normpath=None):
             return normpath(os.path.join(os.path.dirname(index), relpath))
         else:
             return index
+
 
 webpage2html_cache = {}
 
@@ -172,7 +180,7 @@ def handle_css_content(index, css, verbose=True):
     return css
 
 
-def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True, errorpage=False):
+def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True, errorpage=False, to_file=False):
     '''
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html
@@ -184,6 +192,8 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
 
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
+    soup_title = soup.title.string
+
     for link in soup('link'):
         if link.get('href'):
             if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
@@ -262,13 +272,30 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     if comment:
         for html in soup('html'):
             html.insert(0, BeautifulSoup(
-                '<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (
-                index, datetime.datetime.now().ctime()), 'lxml'))
+                '\n<!-- \n single html processed by https://github.com/zTrix/webpage2html\n title: %s\n url: %s\n date: %s\n -->\n' % (soup_title, index, datetime.datetime.now().ctime()), 'lxml'))
             break
+
     if prettify:
-        return soup.prettify(formatter='html')
+        soup = soup.prettify(formatter='html')
     else:
-        return str(soup)
+        soup = str(soup)
+
+    if to_file:
+        fname = soup_to_file(soup_title, soup)
+        return '\nCompleted! --> %s' % (fname)
+
+    return soup
+
+
+def soup_to_file(title, soup):
+    """With generated content create .html file named with the page title"""
+    # clean title possible nasty chars for filename. Maybe add warn title got cleaned?
+    keepcharacters = (' ','.','_','-')
+    fname = "".join(c for c in title if c.isalnum() or c in keepcharacters).rstrip()+'.html'
+    f = open(fname, 'w')
+    f.write(soup)
+    f.close()
+    return fname
 
 
 def usage():
@@ -282,6 +309,7 @@ options:
     -h, --help              help page, you are reading this now!
     -q, --quite             don't show verbose url get log in stderr
     -s, --script            keep javascript in the generated html
+    -f, --file              generate directly .html file named with the url page title
 
 examples:
 
@@ -290,6 +318,12 @@ examples:
 
     $ webpage2html http://www.google.com > google.html
         save google index page for offline reading, keep style untainted
+
+    $ webpage2html -f https://en.wikipedia.org/wiki/Python_(programming_language)
+        save python lang wikipedia page for offline reading, keep style untainted
+        will also automatically generate an html file named with wikipedia page title
+        in your current working directory, like:
+            "Python (programming language) - Wikipedia.html"
 
     $ webpage2html -s http://gabrielecirulli.github.io/2048/ > 2048.html
         save dynamic page with Javascript example
@@ -306,6 +340,7 @@ def main():
     parser.add_argument('-q', '--quite', action='store_true', help="don't show verbose url get log in stderr")
     parser.add_argument('-s', '--script', action='store_true', help="keep javascript in the generated html ")
     parser.add_argument('-k', '--insecure', action='store_true', help="ignore the certificate")
+    parser.add_argument('-f', '--file', action='store_true', help="generate directly .html file named with the url page title")
     parser.add_argument('--errorpage', action='store_true', help="crawl an error page")
     parser.add_argument("url", help="the website to store")
     args = parser.parse_args()
@@ -317,9 +352,12 @@ def main():
         kwargs['verify'] = False
     if args.errorpage:
         kwargs['errorpage'] = True
+    if args.file:
+        kwargs['to_file'] = True
+
     rs = generate(args.url, **kwargs)
+
     sys.stdout.write(rs)
 
 if __name__ == '__main__':
     main()
-
