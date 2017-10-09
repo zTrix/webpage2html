@@ -49,7 +49,6 @@ def absurl(index, relpath=None, normpath=None):
 
 webpage2html_cache = {}
 
-
 def get(index, relpath=None, verbose=True, usecache=True, verify=True, ignore_error=False):
     global webpage2html_cache
     if index.startswith('http') or (relpath and relpath.startswith('http')):
@@ -119,6 +118,8 @@ def data_to_base64(index, src, verbose=True):
         fmt = 'image/png'
     elif sp.endswith('.gif'):
         fmt = 'image/gif'
+    elif sp.endswith('.ico'):
+        fmt = 'image/x-icon'
     elif sp.endswith('.jpg') or sp.endswith('.jpeg'):
         fmt = 'image/jpg'
     elif sp.endswith('.svg'):
@@ -142,7 +143,9 @@ def data_to_base64(index, src, verbose=True):
     else:
         # what if it's not a valid font type? may not matter
         fmt = 'image/png'
+
     data, extra_data = get(index, src, verbose=verbose)
+
     if extra_data and extra_data.get('content-type'):
         fmt = extra_data.get('content-type').replace(' ', '')
     if data:
@@ -193,9 +196,16 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
     soup_title = soup.title.string
+    favicon_found = False
 
     for link in soup('link'):
         if link.get('href'):
+            if 'icon' in link.get('rel'):
+                link['data-href'] = link['href']
+                link['href'] = data_to_base64(index, link['href'], verbose=verbose)
+                favicon_found = True
+                continue
+
             if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type=new_type)
@@ -217,6 +227,14 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
             elif full_url:
                 link['data-href'] = link['href']
                 link['href'] = absurl(index, link['href'])
+
+    # if a favicon is not found in link tags, to avoid the browser default favicon
+    # request to the server root, we create an empty favicon link tag
+    if not favicon_found:
+        ftag = soup.new_tag('link', href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=", rel="icon", type="image/x-icon")
+        head = soup.head
+        head.append(ftag)
+
     for js in soup('script'):
         if not keep_script:
             js.replace_with('')
@@ -241,10 +259,22 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
             raise
         # print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
         js.replace_with(code)
+
     for img in soup('img'):
         if not img.get('src'): continue
         img['data-src'] = img['src']
         img['src'] = data_to_base64(index, img['src'], verbose=verbose)
+
+        # `img` elements may have `srcset` attributes with multiple sets of images.
+        # To get a lighter document it will be cleared, and used only the standard `src`
+        # attribute.
+        # Maybe add a flag to enable the base64 conversion of each `srcset`?
+        # For now a simple warning is displayed informing that image has multiple sources
+        # that are stripped.
+        if img.get('srcset'):
+            img['data-srcset'] = img['srcset']
+            del img['srcset']
+            if verbose: log('[ INFO ] found img tag with multiple `srcset`. Attribute will be cleared. File src => %s' % (img['data-src']), 'cyan')
 
         def check_alt(attr):
             if img.has_attr(attr) and img[attr].startswith('this.src='):
@@ -254,6 +284,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         check_alt('onerror')
         check_alt('onmouseover')
         check_alt('onmouseout')
+
     for tag in soup(True):
         if full_url and tag.name == 'a' and tag.has_attr('href') and not tag['href'].startswith('#'):
             tag['data-href'] = tag['href']
@@ -268,11 +299,12 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
             if tag.string:
                 tag.string = handle_css_content(index, tag.string, verbose=verbose)
 
+
     # finally insert some info into comments
     if comment:
         for html in soup('html'):
             html.insert(0, BeautifulSoup(
-                '\n<!-- \n single html processed by https://github.com/zTrix/webpage2html\n title: %s\n url: %s\n date: %s\n -->\n' % (soup_title, index, datetime.datetime.now().ctime()), 'lxml'))
+                '\n <!-- \n single html processed by https://github.com/zTrix/webpage2html\n title: %s\n url: %s\n date: %s\n --> \n' % (soup_title, index, datetime.datetime.now().ctime()), 'lxml'))
             break
 
     if prettify:
