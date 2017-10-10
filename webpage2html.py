@@ -184,6 +184,8 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
 
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
+    soup_title = str(soup.title)
+
     for link in soup('link'):
         if link.get('href'):
             if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
@@ -262,8 +264,9 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     if comment:
         for html in soup('html'):
             html.insert(0, BeautifulSoup(
-                '<!-- \n single html processed by https://github.com/zTrix/webpage2html\n url: %s\n date: %s\n-->' % (
-                index, datetime.datetime.now().ctime()), 'lxml'))
+                '<!-- \n single html processed by https://github.com/zTrix/webpage2html\n title: %s\n url: %s\n date: %s\n-->' % (
+                soup_title, index, datetime.datetime.now().ctime()
+            ), 'lxml'))
             break
     if prettify:
         return soup.prettify(formatter='html')
@@ -306,6 +309,7 @@ def main():
     parser.add_argument('-q', '--quite', action='store_true', help="don't show verbose url get log in stderr")
     parser.add_argument('-s', '--script', action='store_true', help="keep javascript in the generated html ")
     parser.add_argument('-k', '--insecure', action='store_true', help="ignore the certificate")
+    parser.add_argument('-o', '--output', help="save output to")
     parser.add_argument('--errorpage', action='store_true', help="crawl an error page")
     parser.add_argument("url", help="the website to store")
     args = parser.parse_args()
@@ -318,7 +322,11 @@ def main():
     if args.errorpage:
         kwargs['errorpage'] = True
     rs = generate(args.url, **kwargs)
-    sys.stdout.write(rs)
+    if args.output and args.output != '-':
+        with open(args.output, 'wb') as f:
+            f.write(rs)
+    else:
+        sys.stdout.write(rs)
 
 if __name__ == '__main__':
     main()
