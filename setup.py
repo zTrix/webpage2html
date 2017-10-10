@@ -5,7 +5,7 @@ from setuptools import find_packages
 
 setup(
     name='webpage2html',
-    version='0.3.0',
+    version='0.3.2',
 
     author='Wenlei Zhu',
     author_email='i@ztrix.me',
