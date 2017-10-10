@@ -111,6 +111,8 @@ def data_to_base64(index, src, verbose=True):
         fmt = 'image/png'
     elif sp.endswith('.gif'):
         fmt = 'image/gif'
+    elif sp.endswith('.ico'):
+        fmt = 'image/x-icon'
     elif sp.endswith('.jpg') or sp.endswith('.jpeg'):
         fmt = 'image/jpg'
     elif sp.endswith('.svg'):
@@ -140,8 +142,7 @@ def data_to_base64(index, src, verbose=True):
     if data:
         return ('data:%s;base64,' % fmt) + base64.b64encode(data)
     else:
-        return src
-
+        return absurl(index, src)
 
 css_encoding_re = re.compile(r'''@charset\s+["']([-_a-zA-Z0-9]+)["']\;''', re.I)
 
@@ -184,11 +185,14 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
 
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
-    soup_title = str(soup.title)
+    soup_title = soup.title.string if soup.title else ''
 
     for link in soup('link'):
         if link.get('href'):
-            if (link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or [])):
+            if 'mask-icon' in (link.get('rel') or []) or 'icon' in (link.get('rel') or []) or 'apple-touch-icon' in (link.get('rel') or []) or 'apple-touch-icon-precomposed' in (link.get('rel') or []):
+                link['data-href'] = link['href']
+                link['href'] = data_to_base64(index, link['href'], verbose=verbose)
+            elif link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or []):
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type=new_type)
                 css['data-href'] = link['href']
