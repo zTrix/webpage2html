@@ -242,6 +242,17 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         img['data-src'] = img['src']
         img['src'] = data_to_base64(index, img['src'], verbose=verbose)
 
+        # `img` elements may have `srcset` attributes with multiple sets of images.
+        # To get a lighter document it will be cleared, and used only the standard `src` attribute
+        # Maybe add a flag to enable the base64 conversion of each `srcset`?
+        # For now a simple warning is displayed informing that image has multiple sources
+        # that are stripped.
+
+        if img.get('srcset'):
+            img['data-srcset'] = img['srcset']
+            del img['srcset']
+            if verbose: log('[ WARN ] srcset found in img tag. Attribute will be cleared. File src => %s' % (img['data-src']), 'yellow')
+
         def check_alt(attr):
             if img.has_attr(attr) and img[attr].startswith('this.src='):
                 # we do not handle this situation yet, just warn the user
