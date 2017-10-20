@@ -11,7 +11,7 @@ The basic idea is to insert all css/javascript files into html directly, and use
 
 ## Usage and Example
 
-save webpage directly from url(**recommended** way):
+Save webpage directly from url (**recommended** way):
 
 ```bash
 $ python2 webpage2html.py http://www.google.com > google.html
