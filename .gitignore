@@ -3,3 +3,5 @@
 /dist
 *.egg-info
 *.swp
+.python-version
+.idea/

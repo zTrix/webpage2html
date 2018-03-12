@@ -1,26 +1,34 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, sys, re, base64, urlparse, urllib2, urllib, datetime
-from bs4 import BeautifulSoup
-import lxml
-import requests
+from __future__ import print_function
+
 import argparse
+import base64
+import datetime
+import os
+import re
+import sys
+
+import requests
+from bs4 import BeautifulSoup
+from termcolor import colored
+
+if sys.version > '3':
+    from urllib.parse import urlparse, urlunsplit, urljoin, quote
+else:
+    from urlparse import urlparse, urlunsplit, urljoin
+    from urllib import quote
 
 re_css_url = re.compile('(url\(.*?\))')
-
-try:
-    from termcolor import colored
-except:
-    def colored(text, color=None, on_color=None, attrs=None):
-        return text
+webpage2html_cache = {}
 
 
 def log(s, color=None, on_color=None, attrs=None, new_line=True):
     if not color:
-        print >> sys.stderr, str(s),
+        print(str(s), end=' ', file=sys.stderr)
     else:
-        print >> sys.stderr, colored(str(s), color, on_color, attrs),
+        print(colored(str(s), color, on_color, attrs), end=' ', file=sys.stderr)
     if new_line:
         sys.stderr.write('\n')
     sys.stderr.flush()
@@ -28,83 +36,90 @@ def log(s, color=None, on_color=None, attrs=None, new_line=True):
 
 def absurl(index, relpath=None, normpath=None):
     if normpath is None:
-        normpath = lambda x:x
+        normpath = lambda x: x
     if index.lower().startswith('http') or (relpath and relpath.startswith('http')):
-        new = urlparse.urlparse(urlparse.urljoin(index, relpath))
+        new = urlparse(urljoin(index, relpath))
+        return urlunsplit((new.scheme, new.netloc, normpath(new.path), new.query, ''))
+        # normpath不是函数，为什么这里一直用normpath(path)这种格式
         # netloc contains basic auth, so do not use domain
-        return urlparse.urlunsplit((new.scheme, new.netloc, normpath(new.path), new.query, ''))
     else:
         if relpath:
             return normpath(os.path.join(os.path.dirname(index), relpath))
         else:
             return index
 
-webpage2html_cache = {}
-
 
 def get(index, relpath=None, verbose=True, usecache=True, verify=True, ignore_error=False):
     global webpage2html_cache
     if index.startswith('http') or (relpath and relpath.startswith('http')):
-        fullpath = absurl(index, relpath)
-        if not fullpath:
-            if verbose: log('[ WARN ] invalid path, %s %s' % (index, relpath), 'yellow')
+        full_path = absurl(index, relpath)
+        if not full_path:
+            if verbose:
+                log('[ WARN ] invalid path, %s %s' % (index, relpath), 'yellow')
             return '', None
         # urllib2 only accepts valid url, the following code is taken from urllib
         # http://svn.python.org/view/python/trunk/Lib/urllib.py?r1=71780&r2=71779&pathrev=71780
-        fullpath = urllib.quote(fullpath, safe="%/:=&?~#+!$,;'@()*[]")
+        full_path = quote(full_path, safe="%/:=&?~#+!$,;'@()*[]")
         if usecache:
-            if fullpath in webpage2html_cache:
-                if verbose: log('[ CACHE HIT ] - %s' % fullpath)
-                return webpage2html_cache[fullpath], None
+            if full_path in webpage2html_cache:
+                if verbose:
+                    log('[ CACHE HIT ] - %s' % full_path)
+                return webpage2html_cache[full_path], None
         headers = {
             'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)'
         }
         try:
-            response = requests.get(fullpath, headers=headers, verify=verify)
-            if verbose: log('[ GET ] %d - %s' % (response.status_code, response.url))
+            response = requests.get(full_path, headers=headers, verify=verify)
+            if verbose:
+                log('[ GET ] %d - %s' % (response.status_code, response.url))
             if not ignore_error and (response.status_code >= 400 or response.status_code < 200):
                 content = ''
-            # elif response.headers.get('content-type', '').lower().startswith('text/'):
-            #     content = response.text
+            elif response.headers.get('content-type', '').lower().startswith('text/'):
+                content = response.text
             else:
                 content = response.content
             if usecache:
                 webpage2html_cache[response.url] = content
             return content, {'url': response.url, 'content-type': response.headers.get('content-type')}
         except Exception as ex:
-            if verbose: log('[ WARN ] %s - %s %s' % ('???', fullpath, ex), 'yellow')
+            if verbose:
+                log('[ WARN ] %s - %s %s' % ('???', full_path, ex), 'yellow')
             return '', None
-
     elif os.path.exists(index):
         if relpath:
             relpath = relpath.split('#')[0].split('?')[0]
             if os.path.exists(relpath):
-                fullpath = relpath
+                full_path = relpath
             else:
-                fullpath = os.path.normpath(os.path.join(os.path.dirname(index), relpath))
+                full_path = os.path.normpath(os.path.join(os.path.dirname(index), relpath))
             try:
-                ret = open(fullpath, 'rb').read()
-                if verbose: log('[ LOCAL ] found - %s' % fullpath)
+                ret = open(full_path, 'rb').read()
+                if verbose:
+                    log('[ LOCAL ] found - %s' % full_path)
                 return ret, None
-            except IOError, err:
-                if verbose: log('[ WARN ] file not found - %s %s' % (fullpath, str(err)), 'yellow')
+            except IOError as err:
+                if verbose:
+                    log('[ WARN ] file not found - %s %s' % (full_path, str(err)), 'yellow')
                 return '', None
         else:
             try:
                 ret = open(index, 'rb').read()
-                if verbose: log('[ LOCAL ] found - %s' % index)
+                if verbose:
+                    log('[ LOCAL ] found - %s' % index)
                 return ret, None
-            except IOError, err:
-                if verbose: log('[ WARN ] file not found - %s %s' % (index, str(err)), 'yellow')
+            except IOError as err:
+                if verbose:
+                    log('[ WARN ] file not found - %s %s' % (index, str(err)), 'yellow')
                 return '', None
     else:
-        if verbose: log('[ ERROR ] invalid index - %s' % index, 'red')
+        if verbose:
+            log('[ ERROR ] invalid index - %s' % index, 'red')
         return '', None
 
 
 def data_to_base64(index, src, verbose=True):
     # doc here: http://en.wikipedia.org/wiki/Data_URI_scheme
-    sp = urlparse.urlparse(src).path.lower()
+    sp = urlparse(src).path.lower()
     if src.strip().startswith('data:'):
         return src
     if sp.endswith('.png'):
@@ -140,9 +155,18 @@ def data_to_base64(index, src, verbose=True):
     if extra_data and extra_data.get('content-type'):
         fmt = extra_data.get('content-type').replace(' ', '')
     if data:
-        return ('data:%s;base64,' % fmt) + base64.b64encode(data)
+        if sys.version > '3':
+            if type(data) is bytes:
+                return ('data:%s;base64,' % fmt) + bytes.decode(base64.b64encode(data))
+            else:
+                return ('data:%s;base64,' % fmt) + bytes.decode(base64.b64encode(str.encode(data)))
+        else:
+            reload(sys)
+            sys.setdefaultencoding('utf-8')
+            return ('data:%s;base64,' % fmt) + base64.b64encode(data)
     else:
         return absurl(index, src)
+
 
 css_encoding_re = re.compile(r'''@charset\s+["']([-_a-zA-Z0-9]+)["']\;''', re.I)
 
@@ -150,8 +174,12 @@ css_encoding_re = re.compile(r'''@charset\s+["']([-_a-zA-Z0-9]+)["']\;''', re.I)
 def handle_css_content(index, css, verbose=True):
     if not css:
         return css
-    if not isinstance(css, unicode):
-        mo = css_encoding_re.search(css)
+    if not isinstance(css, str):
+        if sys.version > '3':
+            css = bytes.decode(css)
+            mo = css_encoding_re.search(css)
+        else:
+            mo = css_encoding_re.search(css)
         if mo:
             try:
                 css = css.decode(mo.group(1))
@@ -173,15 +201,16 @@ def handle_css_content(index, css, verbose=True):
     return css
 
 
-def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True, errorpage=False):
-    '''
+def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True,
+             errorpage=False):
+    """
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html
-    '''
-    origin_index = index
+    """
     html_doc, extra_data = get(index, verbose=verbose, verify=verify, ignore_error=errorpage)
 
-    if extra_data and extra_data.get('url'): index = extra_data['url']
+    if extra_data and extra_data.get('url'):
+        index = extra_data['url']
 
     # now build the dom tree
     soup = BeautifulSoup(html_doc, 'lxml')
@@ -189,15 +218,19 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
 
     for link in soup('link'):
         if link.get('href'):
-            if 'mask-icon' in (link.get('rel') or []) or 'icon' in (link.get('rel') or []) or 'apple-touch-icon' in (link.get('rel') or []) or 'apple-touch-icon-precomposed' in (link.get('rel') or []):
+            if 'mask-icon' in (link.get('rel') or []) or 'icon' in (link.get('rel') or []) or 'apple-touch-icon' in (
+                    link.get('rel') or []) or 'apple-touch-icon-precomposed' in (link.get('rel') or []):
                 link['data-href'] = link['href']
+
                 link['href'] = data_to_base64(index, link['href'], verbose=verbose)
-            elif link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (link.get('rel') or []):
+            elif link.get('type') == 'text/css' or link['href'].lower().endswith('.css') or 'stylesheet' in (
+                    link.get('rel') or []):
                 new_type = 'text/css' if not link.get('type') else link['type']
                 css = soup.new_tag('style', type=new_type)
                 css['data-href'] = link['href']
                 for attr in link.attrs:
-                    if attr in ['href']: continue
+                    if attr in ['href']:
+                        continue
                     css[attr] = link[attr]
                 css_data, _ = get(index, relpath=link['href'], verbose=verbose)
                 new_css_content = handle_css_content(absurl(index, link['href']), css_data, verbose=verbose)
@@ -217,12 +250,13 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         if not keep_script:
             js.replace_with('')
             continue
-        if not js.get('src'): continue
+        if not js.get('src'):
+            continue
         new_type = 'text/javascript' if not js.has_attr('type') or not js['type'] else js['type']
         code = soup.new_tag('script', type=new_type)
         code['data-src'] = js['src']
+        js_str, _ = get(index, relpath=js['src'], verbose=verbose)
         try:
-            js_str, _ = get(index, relpath=js['src'], verbose=verbose)
             if js_str.find('</script>') > -1:
                 code['src'] = 'data:text/javascript;base64,' + base64.b64encode(js_str)
             elif js_str.find(']]>') < 0:
@@ -233,12 +267,13 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
                 # code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
                 code.string = js_str.encode('utf-8')
         except:
-            if verbose: log(repr(js_str))
+            if verbose:
+                log(repr(js_str))
             raise
-        # print >> sys.stderr, js is None, code is None, type(js), type(code), len(code.string)
         js.replace_with(code)
     for img in soup('img'):
-        if not img.get('src'): continue
+        if not img.get('src'):
+            continue
         img['data-src'] = img['src']
         img['src'] = data_to_base64(index, img['src'], verbose=verbose)
 
@@ -251,12 +286,15 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         if img.get('srcset'):
             img['data-srcset'] = img['srcset']
             del img['srcset']
-            if verbose: log('[ WARN ] srcset found in img tag. Attribute will be cleared. File src => %s' % (img['data-src']), 'yellow')
+            if verbose:
+                log('[ WARN ] srcset found in img tag. Attribute will be cleared. File src => %s' % (img['data-src']),
+                    'yellow')
 
         def check_alt(attr):
             if img.has_attr(attr) and img[attr].startswith('this.src='):
                 # we do not handle this situation yet, just warn the user
-                if verbose: log('[ WARN ] %s found in img tag and unhandled, which may break page' % (attr), 'yellow')
+                if verbose:
+                    log('[ WARN ] %s found in img tag and unhandled, which may break page' % (attr), 'yellow')
 
         check_alt('onerror')
         check_alt('onmouseover')
@@ -278,10 +316,9 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
     # finally insert some info into comments
     if comment:
         for html in soup('html'):
-            html.insert(0, BeautifulSoup(
-                '<!-- \n single html processed by https://github.com/zTrix/webpage2html\n title: %s\n url: %s\n date: %s\n-->' % (
-                soup_title, index, datetime.datetime.now().ctime()
-            ), 'lxml'))
+            html.insert(0, BeautifulSoup('<!-- \n single html processed by https://github.com/zTrix/webpage2html\n '
+                                         'title: %s\n url: %s\n date: %s\n-->' % (soup_title, index, datetime.datetime.
+                                                                                  now().ctime()), 'lxml'))
             break
     if prettify:
         return soup.prettify(formatter='html')
@@ -343,6 +380,6 @@ def main():
     else:
         sys.stdout.write(rs)
 
+
 if __name__ == '__main__':
     main()
-

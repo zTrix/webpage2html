@@ -1,5 +1,5 @@
-@import url("./blah.css?family=Droid+Serif:400italic,700italic,400,700")
+@import url("./blah.css?family=Droid+Serif:400italic,700italic,400,700");
 
-body {
+body{
   color: red;
 }
