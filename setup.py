@@ -1,7 +1,4 @@
-#!/usr/bin/env python2
-
 from distutils.core import setup
-from setuptools import find_packages
 
 setup(
     name='webpage2html',
@@ -14,19 +11,19 @@ setup(
     license='LICENSE.txt',
     keywords="webpage html convert",
     description='Save/convert web pages to a single editable html file',
-    long_description=open('README.txt').read(),
+    long_description=open('readme.md').read(),
 
-    py_modules = ['webpage2html'],
+    py_modules=['webpage2html'],
 
     # Refers to test/test.py
     test_suite='test.test',
 
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'webpage2html=webpage2html:main'
         ]
     },
-    classifiers = [
+    classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Developers',
@@ -35,6 +32,8 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Topic :: Software Development',
         'Topic :: System',
         'Topic :: Terminals',
