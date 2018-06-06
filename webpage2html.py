@@ -20,7 +20,7 @@ else:
     from urlparse import urlparse, urlunsplit, urljoin
     from urllib import quote
 
-re_css_url = re.compile('(url\(.*?\))')
+re_css_url = re.compile(r'(url\(.*?\))')
 webpage2html_cache = {}
 
 
@@ -256,6 +256,8 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
         code = soup.new_tag('script', type=new_type)
         code['data-src'] = js['src']
         js_str, _ = get(index, relpath=js['src'], verbose=verbose)
+        if type(js_str) == bytes:
+            js_str = js_str.decode('utf-8')
         try:
             if js_str.find('</script>') > -1:
                 code['src'] = 'data:text/javascript;base64,' + base64.b64encode(js_str)
@@ -359,7 +361,7 @@ def main():
     kwargs = {}
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--quite', action='store_true', help="don't show verbose url get log in stderr")
-    parser.add_argument('-s', '--script', action='store_true', help="keep javascript in the generated html ")
+    parser.add_argument('-s', '--script', action='store_true', help="keep javascript in the generated html")
     parser.add_argument('-k', '--insecure', action='store_true', help="ignore the certificate")
     parser.add_argument('-o', '--output', help="save output to")
     parser.add_argument('--errorpage', action='store_true', help="crawl an error page")
