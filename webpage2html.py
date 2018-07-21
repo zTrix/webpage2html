@@ -378,7 +378,7 @@ def main():
     rs = generate(args.url, **kwargs)
     if args.output and args.output != '-':
         with open(args.output, 'wb') as f:
-            f.write(rs)
+            f.write(rs.encode())
     else:
         sys.stdout.write(rs)
 
