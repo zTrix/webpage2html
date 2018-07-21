@@ -202,7 +202,7 @@ def handle_css_content(index, css, verbose=True):
 
 
 def generate(index, verbose=True, comment=True, keep_script=False, prettify=False, full_url=True, verify=True,
-             errorpage=False):
+             errorpage=False, **kwargs):
     """
     given a index url such as http://www.google.com, http://custom.domain/index.html
     return generated single html
@@ -367,15 +367,14 @@ def main():
     parser.add_argument('--errorpage', action='store_true', help="crawl an error page")
     parser.add_argument("url", help="the website to store")
     args = parser.parse_args()
-    if args.quiet:
-        kwargs['verbose'] = False
-    if args.script:
-        kwargs['keep_script'] = True
-    if args.insecure:
-        kwargs['verify'] = False
-    if args.errorpage:
-        kwargs['errorpage'] = True
-    rs = generate(args.url, **kwargs)
+
+    args.verbose = not args.quiet
+    args.keep_script = args.script
+    args.verify = not args.insecure
+    args.index = args.url
+    kwargs = vars(args)
+
+    rs = generate(**kwargs)
     if args.output and args.output != '-':
         with open(args.output, 'wb') as f:
             f.write(rs.encode())
