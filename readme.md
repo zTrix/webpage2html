@@ -72,6 +72,7 @@ Currently srcset is discarded.
  1. lukin.a.i submitted a patch to fix not recognised css link (rel=stylesheet) issue
  1. [Gruber](https://github.com/GlassGruber).
  1. Java port of this project. https://github.com/cedricblondeau/webpage2html-java
+ 1. [https://github.com/presto8](https://github.com/presto8)
 
 # License
 

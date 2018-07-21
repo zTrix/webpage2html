@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='webpage2html',
-    version='0.3.5',
+    version='0.3.6',
 
     author='Wenlei Zhu',
     author_email='i@ztrix.me',
@@ -11,7 +11,7 @@ setup(
     license='LICENSE.txt',
     keywords="webpage html convert",
     description='Save/convert web pages to a single editable html file',
-    long_description=open('readme.md').read(),
+    long_description='View https://github.com/zTrix/webpage2html for project description and usage',
 
     py_modules=['webpage2html'],
 
