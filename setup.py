@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='webpage2html',
-    version='0.3.6',
+    version='0.3.7',
 
     author='Wenlei Zhu',
     author_email='i@ztrix.me',

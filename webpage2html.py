@@ -266,7 +266,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
             js_str = js_str.decode('utf-8')
         try:
             if js_str.find('</script>') > -1:
-                code['src'] = 'data:text/javascript;base64,' + base64.b64encode(js_str)
+                code['src'] = 'data:text/javascript;base64,' + base64.b64encode(js_str.encode()).decode()
             elif js_str.find(']]>') < 0:
                 code.string = '<!--//--><![CDATA[//><!--\n' + js_str + '\n//--><!]]>'
             else:
