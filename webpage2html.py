@@ -273,7 +273,7 @@ def generate(index, verbose=True, comment=True, keep_script=False, prettify=Fals
                 # replace ]]> does not work at all for chrome, do not believe
                 # http://en.wikipedia.org/wiki/CDATA
                 # code.string = '<![CDATA[\n' + js_str.replace(']]>', ']]]]><![CDATA[>') + '\n]]>'
-                code.string = js_str.encode('utf-8')
+                code.string = js_str
         except:
             if verbose:
                 log(repr(js_str))
