@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 import base64
+import codecs
 import datetime
 import os
 import re
@@ -387,6 +388,7 @@ def main():
         with open(args.output, 'wb') as f:
             f.write(rs.encode())
     else:
+        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
         sys.stdout.write(rs)
 
 
