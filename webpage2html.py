@@ -76,6 +76,7 @@ def get(index, relpath=None, verbose=True, usecache=True, verify=True, ignore_er
 
         try:
             response = requests.get(full_path, headers=headers, verify=verify, auth=auth)
+            response.encoding = response.apparent_encoding
             if verbose:
                 log('[ GET ] %d - %s' % (response.status_code, response.url))
             if not ignore_error and (response.status_code >= 400 or response.status_code < 200):
