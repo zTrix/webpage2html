@@ -6,6 +6,22 @@
 </head>
 <body>
 <style>
+  <script type="text/javascript">
+        var myDate=new Date();
+        var myDay=myDate.getDay();
+        var weekday=[' Sunday',' Monday',' Tuesday',' Wednesday',' Thursday',' Friday',' Saturday']; 
+        document.write("Today is : " + weekday[myDay]); 
+        document.write("<br/>"); 
+
+        var hours = myDate.getHours(); 
+        var ampm = hours >= 12 ? 'PM' : 'AM'; 
+        hours = hours % 12; 
+        hours = hours ? hours : 12; 
+        var minutes = myDate.getMinutes(); 
+        minutes = minutes < 10 ? '0' + minutes : minutes; 
+        var myTime = hours + " : " + minutes + " " + ampm 
+        document.write("\tCurrent time is : " + myTime); 
+    </script>
 @font-face {
   font-family: 'octicons';
   src: url('webfont/fonts/octicons.eot') format('embedded-opentype'),
