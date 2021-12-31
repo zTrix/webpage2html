@@ -15,7 +15,7 @@ setup(
 
     py_modules=['webpage2html'],
 
-    # Refers to test/test.py
+    # Refers to test/test.python
     test_suite='test.test',
 
     entry_points={
